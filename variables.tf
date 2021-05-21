@@ -91,7 +91,7 @@ variable "fargate_options" {
   })
 
   default = {
-    platform_version = "LATEST"
+    platform_version = "1.4.0"
     task_cpu         = 256
     task_memory      = 512
   }
@@ -117,7 +117,7 @@ variable "tasks_maximum_percent" {
 variable "load_balancer" {
   description = "load balancer information"
 
-  # health_check_grace_period_seconds:  Grace period within which failed health checks will be ignored at container start. Only applies to services with an attached loadbalancer.
+
 
   type = object({
     alb_arn                           = string
@@ -132,15 +132,23 @@ variable "load_balancer" {
   })
 
   default = {
-    alb_arn                           = null
-    container_name                    = null
-    alb_security_group_id             = null
-    certificate_arn                   = null
+    alb_arn = null
+    # name of the conteiner reference to join in load_balancer definition in service configuration
+    container_name = null
+    # security group id of the load balancer
+    alb_security_group_id = null
+    # certificate ARN of the loadbalancer
+    certificate_arn = null
+    # Grace period within which failed health checks will be ignored at container start. Only applies to services with an attached loadbalancer.
     health_check_grace_period_seconds = null
-    default_listener_arn              = null
-    testing_listener_port             = -1
-    target_group_additional_options   = {}
-    health_check                      = {}
+    # listener  information about active
+    default_listener_arn = null
+    # port used for testing listener
+    testing_listener_port = -1
+    # additional config from load balancer, this is a map for any configuration from terraform resource (see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group#argument-reference)
+    target_group_additional_options = {}
+    # health check configuration to enable inner all target groups (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group#health_check)
+    health_check = {}
   }
 }
 
@@ -150,6 +158,9 @@ variable "additional_security_group_ids" {
   type        = set(string)
 }
 
+####
+# KMS configuration
+####
 variable "kms_key_id" {
   description = "KMS customer managed key (CMK) ARN for encrypting application logs."
   type        = string
@@ -180,7 +191,7 @@ variable "health_check" {
     # matcher (May be required) Response codes to use when checking for a healthy responses from a target. You can specify multiple values (for example, "200,202" for HTTP(s) or "0,12" for GRPC) or a range of values (for example, "200-299" or "0-99"). Required for HTTP/HTTPS/GRPC ALB. Only applies to Application Load Balancers (i.e., HTTP/HTTPS/GRPC) not Network Load Balancers (i.e., TCP).
     matcher = "200-299"
     # path - (May be required) Destination for the health check request. Required for HTTP/HTTPS ALB and HTTP NLB. Only applies to HTTP/HTTPS.
-    path = "/_health_check"
+    path = "/"
     # protocol - (Optional) Protocol to use to connect with the target. Defaults to HTTP. Not applicable when target_type is lambda.
     protocol = "HTTP"
     # timeout - (Optional) Amount of time, in seconds, during which no response means a failed health check. For Application Load Balancers, the range is 2 to 120 seconds, and the default is 5 seconds for the instance target type and 30 seconds for the lambda target type. For Network Load Balancers, you cannot set a custom value, and the default is 10 seconds for TCP and HTTPS health checks and 6 seconds for HTTP health checks.
@@ -191,7 +202,7 @@ variable "health_check" {
 }
 
 variable "deployment" {
-  description = "Deployment configuration"
+  description = "Deployment configuration, deployment resources will be created if deployment_controller is CODE_DEPLOY"
   type = object({
     description                      = string
     deployment_controller            = string
@@ -204,13 +215,21 @@ variable "deployment" {
   })
 
   default = {
-    description                      = "deployer"
-    deployment_controller            = "ECS"
-    deployment_config_name           = null
-    auto_rollback_enabled            = true
-    auto_rollback_events             = ["DEPLOYMENT_FAILURE"]
-    action_on_timeout                = "STOP_DEPLOYMENT"
-    wait_time_in_minutes             = 20
+    # enabled - description for codedeploy policies/roles
+    description = "deployer"
+    # deployment controller type of the service options (ECS | CODE_DEPLOY | EXTERNAL)
+    deployment_controller = "ECS"
+    # deployment config name for rolling deploy rules (https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations.html)
+    deployment_config_name = null
+    # rollback will be triggered on error without interaction?  (true/false)
+    auto_rollback_enabled = true
+    # events will trigger rollback in case of error
+    auto_rollback_events = ["DEPLOYMENT_FAILURE"]
+    # action to perform on timeout
+    action_on_timeout = "STOP_DEPLOYMENT"
+    # wait time in minutes in verification window
+    wait_time_in_minutes = 20
+    # wait time in minutes in wait termination window
     termination_wait_time_in_minutes = 20
   }
 }

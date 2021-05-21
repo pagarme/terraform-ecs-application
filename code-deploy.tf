@@ -8,6 +8,13 @@ resource "aws_codedeploy_app" "this" {
 
   compute_platform = "ECS"
   name             = each.value.name
+
+  tags = merge(
+    {
+      "Name" = each.value.name
+    },
+    var.tags,
+  )
 }
 
 # https://www.terraform.io/docs/providers/aws/r/codedeploy_deployment_group.html
@@ -95,6 +102,8 @@ resource "aws_codedeploy_deployment_group" "this" {
         }
       }
 
+      # One pair of target groups. One is associated with the original task set.
+      # The second target is associated with the task set that serves traffic after the deployment completes.
       dynamic "test_traffic_route" {
         for_each = local.listener_test_configuration
         content {
@@ -103,6 +112,8 @@ resource "aws_codedeploy_deployment_group" "this" {
       }
     }
   }
+
+  tags = var.tags
 
   depends_on = [
     aws_ecs_service.main
@@ -230,6 +241,13 @@ resource "aws_iam_policy" "codedeploy" {
   policy      = data.aws_iam_policy_document.policy_deployer.json
   path        = "/"
   description = each.value.description
+
+  tags = merge(
+    {
+      "Name" = "${local.iam_name}-${each.key}"
+    },
+    var.tags,
+  )
 }
 
 
