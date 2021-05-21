@@ -27,10 +27,8 @@
 
 
 #
-# ECS
+# ECS Resource configuration
 #
-
-data "aws_region" "current" {}
 
 # Create a task definition with a golang image so the ecs service can be
 # tested. We expect deployments will manage the future container definitions.
@@ -135,7 +133,6 @@ resource "aws_ecs_service" "main" {
   tags = var.tags
 
   depends_on = [
-    aws_lb_listener_rule.default_role,
     aws_lb_target_group.this
   ]
 

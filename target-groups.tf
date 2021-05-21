@@ -59,36 +59,14 @@ resource "aws_lb_target_group" "this" {
   }
 }
 
-resource "aws_lb_listener_rule" "default_role" {
-  for_each = local.listener_default_configuration
-
-  listener_arn = each.value.listener_arn
-
-  action {
-    order            = 10
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.this[local.blue_id].arn
-  }
-
-  condition {
-    host_header {
-      values = ["*.*"]
-    }
-  }
-
-  lifecycle {
-    ignore_changes = [
-      action
-    ]
-  }
-}
-
 resource "aws_lb_listener" "testing_route" {
   for_each = local.listener_test_configuration
 
   load_balancer_arn = each.value.load_balancer_arn
   certificate_arn   = each.value.certificate_arn
+  ssl_policy        = each.value.ssl_policy
   port              = each.value.port
+  protocol          = each.value.protocol
 
   # this action is coded to
   default_action {
@@ -102,6 +80,5 @@ resource "aws_lb_listener" "testing_route" {
     ]
   }
 }
-
 
 

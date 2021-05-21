@@ -1,3 +1,5 @@
+##### ECS information
+
 output "ecs_security_group_id" {
   description = "Security Group ID assigned to the ECS tasks."
   value       = aws_security_group.ecs_sg.id
@@ -52,6 +54,21 @@ output "awslogs_group_arn" {
   description = "ARN of the CloudWatch Logs log group containers should use."
   value       = aws_cloudwatch_log_group.main.arn
 }
+
+
+##### Target groups information
+
+output "blue_target_group" {
+  value       = aws_lb_target_group.this["green"] != null ? aws_lb_target_group.this["green"].arn : null
+  description = "(Application Load Balancer) production target groups"
+}
+
+output "green_target_group" {
+  value       = aws_lb_target_group.this["blue"] != null ? aws_lb_target_group.this["blue"].arn : null
+  description = "(Application Load Balancer) production target groups"
+}
+
+
 
 #### For codedeploy features
 output "codedeploy_app_id" {

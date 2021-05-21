@@ -26,6 +26,28 @@ resource "aws_lb_listener" "http" {
   }
 }
 
+resource "aws_lb_listener_rule" "main_http" {
+
+  listener_arn = aws_lb_listener.http.arn
+
+  action {
+    order            = 10
+    type             = "forward"
+    target_group_arn = module.ecs-service.blue_target_group
+  }
+
+  condition {
+    host_header {
+      values = ["*.*"] #todo
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      action
+    ]
+  }
+}
 
 resource "aws_security_group" "lb_sg" {
   name   = "lb-${var.test_name}"

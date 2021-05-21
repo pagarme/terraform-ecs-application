@@ -55,12 +55,86 @@ module "ecs-service" {
     container_name                    = "hello_world"
     # security group of the load balancer (rules will be added from module)
     alb_security_group_id             = aws_security_group.my_load_balancer.id
-    # you can use certificate to associate with Test listener
-    certificate_arn                   = null
     # listener to use for blue/green targets
-    default_listener_arn              = aws_lb_listener.http.arn
-    # port to use for tests in traffic shift (the test listener will be created inner module)
-    testing_listener_port             = 8080
+    production_listener_arn           = aws_lb_listener.http.arn
+    # Time in seconds do wait container to be ready for connections
+    health_check_grace_period_seconds = null
+    # All properties from lb_target_group (except health_check) will be passed here
+    target_group_additional_options   = {}
+    # listener for test before enable traffic
+    testing_listener = {
+      # port to use for tests in traffic shift (the test listener will be created inner module)
+      port            = local.testing_port
+      #testing listener protocol
+      protocol        = local.protocol
+      #testing listener ssl policy (if https)
+      ssl_policy      = null
+      # you can use certificate to associate with Test listener (if https)
+      certificate_arn = null
+    }
+    # you can use all configuration from health_check property from lb_target_group resource
+    health_check = {
+      timeout             = 5
+      interval            = 30
+      path                = "/health"
+      protocol            = "HTTP"
+      healthy_threshold   = 3
+      unhealthy_threshold = 3
+      matcher             = "200-399"
+    }
+  }
+
+  # only if deployment_controller = CODE_DEPLOY, codedeploy will be created
+  deployment = {
+    description                      = "deployer"
+    deployment_controller            = "CODE_DEPLOY"
+    deployment_config_name           = "CodeDeployDefault.ECSCanary10Percent5Minutes"
+    auto_rollback_enabled            = true
+    auto_rollback_events             = ["DEPLOYMENT_FAILURE"]
+    action_on_timeout                = "STOP_DEPLOYMENT"
+    wait_time_in_minutes             = 20
+    termination_wait_time_in_minutes = 20
+  }
+
+  container_definitions = <<TASK DEFINITION HERE>>
+
+  cloudwatch = {
+    prefix_name       = local.log_prefix
+    retention_in_days = 7
+  }
+
+  networking = {
+    subnet_ids       = local.subnet_ids
+    vpc_id           = local.vpc_id
+    assign_public_ip = true
+  }
+
+  tags = local.tags # we pass any string map and will be added in all resources.
+}
+
+```
+
+### ECS service associated with an Application Load Balancer (ALB) and CodeDeploy without Testing Listener
+
+```hcl
+module "ecs-service" {
+  source = "pagarme/ecs-application/aws"
+
+  name            = "my web application"
+  ecs_cluster     = aws_ecs_cluster.my_cluster
+  environment     = "production"
+  container_port  = 3000
+  ecs_use_fargate = true
+
+  load_balancer = {
+    # arn of the load balancer (Application Load Balancer)
+    alb_arn                           = aws_lb.my_load_balancer.arn
+    # main container name from task definition
+    container_name                    = "hello_world"
+    # security group of the load balancer (rules will be added from module)
+    alb_security_group_id             = aws_security_group.my_load_balancer.id
+    # listener to use for blue/green targets
+    production_listener_arn           = aws_lb_listener.http.arn
     # Time in seconds do wait container to be ready for connections
     health_check_grace_period_seconds = null
     # All properties from lb_target_group (except health_check) will be passed here
@@ -181,10 +255,9 @@ No modules.
 | [aws_iam_role_policy.task_execution_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy_attachment.codedeploy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_lb_listener.testing_route](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener) | resource |
-| [aws_lb_listener_rule.default_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener_rule) | resource |
 | [aws_lb_target_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group) | resource |
 | [aws_security_group.ecs_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
-| [aws_security_group_rule.app_ecs_allow_https_from_alb](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule) | resource |
+| [aws_security_group_rule.app_ecs_allow_conn_from_container_to_alb](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule) | resource |
 | [aws_security_group_rule.app_ecs_allow_outbound](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule) | resource |
 | [aws_ecs_task_definition.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ecs_task_definition) | data source |
 | [aws_iam_policy_document.assume_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
@@ -192,7 +265,6 @@ No modules.
 | [aws_iam_policy_document.instance_role_policy_doc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.policy_deployer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.task_execution_role_policy_doc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
-| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 
 ## Inputs
 
@@ -209,9 +281,8 @@ No modules.
 | <a name="input_ecs_use_fargate"></a> [ecs\_use\_fargate](#input\_ecs\_use\_fargate) | Whether to use Fargate for the task definition. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | Environment tag, e.g prod. | `string` | n/a | yes |
 | <a name="input_fargate_options"></a> [fargate\_options](#input\_fargate\_options) | Fargate options for ECS fargate task | <pre>object({<br>    platform_version = string<br>    task_cpu         = number<br>    task_memory      = number<br>  })</pre> | <pre>{<br>  "platform_version": "1.4.0",<br>  "task_cpu": 256,<br>  "task_memory": 512<br>}</pre> | no |
-| <a name="input_health_check"></a> [health\_check](#input\_health\_check) | health check information for resources | <pre>object({<br>    enabled             = bool<br>    healthy_threshold   = number<br>    interval            = number<br>    matcher             = string<br>    path                = string<br>    protocol            = string<br>    timeout             = number<br>    unhealthy_threshold = number<br>  })</pre> | <pre>{<br>  "enabled": true,<br>  "healthy_threshold": 3,<br>  "interval": 30,<br>  "matcher": "200-299",<br>  "path": "/",<br>  "protocol": "HTTP",<br>  "timeout": 10,<br>  "unhealthy_threshold": 3<br>}</pre> | no |
 | <a name="input_kms_key_id"></a> [kms\_key\_id](#input\_kms\_key\_id) | KMS customer managed key (CMK) ARN for encrypting application logs. | `string` | `""` | no |
-| <a name="input_load_balancer"></a> [load\_balancer](#input\_load\_balancer) | load balancer information | <pre>object({<br>    alb_arn                           = string<br>    container_name                    = string<br>    alb_security_group_id             = string<br>    certificate_arn                   = string<br>    default_listener_arn              = string<br>    testing_listener_port             = number<br>    health_check_grace_period_seconds = number<br>    target_group_additional_options   = map(any)<br>    health_check                      = map(any)<br>  })</pre> | <pre>{<br>  "alb_arn": null,<br>  "alb_security_group_id": null,<br>  "certificate_arn": null,<br>  "container_name": null,<br>  "default_listener_arn": null,<br>  "health_check": {},<br>  "health_check_grace_period_seconds": null,<br>  "target_group_additional_options": {},<br>  "testing_listener_port": -1<br>}</pre> | no |
+| <a name="input_load_balancer"></a> [load\_balancer](#input\_load\_balancer) | load balancer information | <pre>object({<br>    alb_arn                 = string<br>    container_name          = string<br>    alb_security_group_id   = string<br>    production_listener_arn = string<br>    testing_listener = object({<br>      port            = number<br>      protocol        = string<br>      certificate_arn = string<br>      ssl_policy      = string<br>    })<br>    health_check_grace_period_seconds = number<br>    target_group_additional_options   = map(any)<br>    health_check = object({<br>      healthy_threshold   = number<br>      interval            = number<br>      matcher             = string<br>      path                = string<br>      protocol            = string<br>      timeout             = number<br>      unhealthy_threshold = number<br>    })<br>  })</pre> | <pre>{<br>  "alb_arn": null,<br>  "alb_security_group_id": null,<br>  "container_name": null,<br>  "health_check": {<br>    "healthy_threshold": 3,<br>    "interval": 30,<br>    "matcher": "200-299",<br>    "path": "/",<br>    "protocol": "HTTP",<br>    "timeout": 10,<br>    "unhealthy_threshold": 3<br>  },<br>  "health_check_grace_period_seconds": null,<br>  "production_listener_arn": null,<br>  "target_group_additional_options": {},<br>  "testing_listener": {<br>    "certificate_arn": null,<br>    "port": -1,<br>    "protocol": "HTTP",<br>    "ssl_policy": null<br>  }<br>}</pre> | no |
 | <a name="input_name"></a> [name](#input\_name) | The service name. | `string` | n/a | yes |
 | <a name="input_networking"></a> [networking](#input\_networking) | network configuration for the service | <pre>object({<br>    vpc_id           = string<br>    subnet_ids       = set(string)<br>    assign_public_ip = bool<br>  })</pre> | n/a | yes |
 | <a name="input_service_registries"></a> [service\_registries](#input\_service\_registries) | List of service registry objects as per <https://www.terraform.io/docs/providers/aws/r/ecs_service.html#service_registries-1>. List can only have a single object until <https://github.com/terraform-providers/terraform-provider-aws/issues/9573> is resolved. | <pre>set(object({<br>    registry_arn   = string<br>    container_name = string<br>    container_port = number<br>    port           = number<br>  }))</pre> | `[]` | no |
@@ -226,6 +297,7 @@ No modules.
 |------|-------------|
 | <a name="output_awslogs_group"></a> [awslogs\_group](#output\_awslogs\_group) | Name of the CloudWatch Logs log group containers should use. |
 | <a name="output_awslogs_group_arn"></a> [awslogs\_group\_arn](#output\_awslogs\_group\_arn) | ARN of the CloudWatch Logs log group containers should use. |
+| <a name="output_blue_target_group"></a> [blue\_target\_group](#output\_blue\_target\_group) | (Application Load Balancer) production target groups |
 | <a name="output_codedeploy_app_id"></a> [codedeploy\_app\_id](#output\_codedeploy\_app\_id) | (CodeDeploy) Amazon's assigned ID for the application. |
 | <a name="output_codedeploy_app_name"></a> [codedeploy\_app\_name](#output\_codedeploy\_app\_name) | (CodeDeploy) The application's name. |
 | <a name="output_codedeploy_deployment_group_id"></a> [codedeploy\_deployment\_group\_id](#output\_codedeploy\_deployment\_group\_id) | (CodeDeploy) Application name and deployment group name. |
@@ -235,6 +307,7 @@ No modules.
 | <a name="output_codedeploy_iam_role_arn"></a> [codedeploy\_iam\_role\_arn](#output\_codedeploy\_iam\_role\_arn) | (CodeDeploy) The Amazon Resource Name (ARN) specifying the IAM Role. |
 | <a name="output_codedeploy_iam_role_name"></a> [codedeploy\_iam\_role\_name](#output\_codedeploy\_iam\_role\_name) | (CodeDeploy) The name of the IAM Role. |
 | <a name="output_ecs_security_group_id"></a> [ecs\_security\_group\_id](#output\_ecs\_security\_group\_id) | Security Group ID assigned to the ECS tasks. |
+| <a name="output_green_target_group"></a> [green\_target\_group](#output\_green\_target\_group) | (Application Load Balancer) production target groups |
 | <a name="output_task_definition_arn"></a> [task\_definition\_arn](#output\_task\_definition\_arn) | Full ARN of the Task Definition (including both family and revision). |
 | <a name="output_task_definition_family"></a> [task\_definition\_family](#output\_task\_definition\_family) | The family of the Task Definition. |
 | <a name="output_task_execution_role"></a> [task\_execution\_role](#output\_task\_execution\_role) | The role object of the task execution role that the Amazon ECS container agent and the Docker daemon can assume. |
