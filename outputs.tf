@@ -54,8 +54,6 @@ output "awslogs_group_arn" {
 }
 
 #### For codedeploy features
-
-
 output "codedeploy_app_id" {
   value       = one([for it in aws_codedeploy_app.this : it.id])
   description = "(CodeDeploy) Amazon's assigned ID for the application."
@@ -95,4 +93,3 @@ output "codedeploy_iam_policy_name" {
   value       = one([for it in aws_iam_policy.codedeploy : it.name])
   description = "(CodeDeploy) The name of the IAM Policy."
 }
-
