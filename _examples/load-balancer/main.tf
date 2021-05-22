@@ -33,8 +33,6 @@ module "ecs-service" {
       certificate_arn = null
     }
 
-    # testing_listener = null
-
     health_check = {
       timeout             = 5
       interval            = 30

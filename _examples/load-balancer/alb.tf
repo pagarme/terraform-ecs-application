@@ -27,7 +27,6 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_lb_listener_rule" "main_http" {
-
   listener_arn = aws_lb_listener.http.arn
 
   action {
