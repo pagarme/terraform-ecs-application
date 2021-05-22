@@ -4,11 +4,11 @@ locals {
   target_container_name = local.name
   # log-group
   awslogs_group = "${var.cloudwatch.prefix_name}/${var.name}"
-  # kms configuration 
+  # kms configuration
   kms_key_id = var.kms_key_id == "" ? null : var.kms_key_id
 
 
-  # iam 
+  # iam
   iam_name = "${var.name}-ecs-codedeploy"
 
   # listener configuration (default)
@@ -50,7 +50,7 @@ locals {
   # green-tg identification
   green_id = "green"
 
-  # canary tg groups 
+  # canary tg groups
   target_groups = {
     for tgs in [local.blue_id, local.green_id] :
     tgs => merge({

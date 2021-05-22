@@ -1,3 +1,5 @@
+### TARGET GROUPS AND LISTENERS CONFIGURATION
+
 resource "aws_lb_target_group" "this" {
   for_each = local.target_groups
 
@@ -88,7 +90,7 @@ resource "aws_lb_listener" "testing_route" {
   certificate_arn   = each.value.certificate_arn
   port              = each.value.port
 
-  # this action is coded to 
+  # this action is coded to
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.this[local.green_id].arn

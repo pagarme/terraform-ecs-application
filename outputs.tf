@@ -5,12 +5,12 @@ output "ecs_security_group_id" {
 
 output "task_execution_role_arn" {
   description = "The ARN of the task execution role that the Amazon ECS container agent and the Docker daemon can assume."
-  value       = join("", aws_iam_role.task_execution_role.*.arn)
+  value       = one(aws_iam_role.task_execution_role.*.arn)
 }
 
 output "task_execution_role_name" {
   description = "The name of the task execution role that the Amazon ECS container agent and the Docker daemon can assume."
-  value       = join("", aws_iam_role.task_execution_role.*.name)
+  value       = one(aws_iam_role.task_execution_role.*.name)
 }
 
 output "task_role_arn" {
@@ -53,3 +53,43 @@ output "awslogs_group_arn" {
   value       = aws_cloudwatch_log_group.main.arn
 }
 
+#### For codedeploy features
+output "codedeploy_app_id" {
+  value       = one([for it in aws_codedeploy_app.this : it.id])
+  description = "(CodeDeploy) Amazon's assigned ID for the application."
+}
+
+output "codedeploy_app_name" {
+  value       = one([for it in aws_codedeploy_app.this : it.name])
+  description = "(CodeDeploy) The application's name."
+}
+
+output "codedeploy_deployment_group_id" {
+  value       = one([for it in aws_codedeploy_deployment_group.this : it.id])
+  description = "(CodeDeploy) Application name and deployment group name."
+}
+
+output "codedeploy_iam_role_arn" {
+  value       = one([for it in aws_iam_role.codedeploy : it.arn])
+  description = "(CodeDeploy) The Amazon Resource Name (ARN) specifying the IAM Role."
+}
+
+output "codedeploy_iam_role_name" {
+  value       = one([for it in aws_iam_role.codedeploy : it.name])
+  description = "(CodeDeploy) The name of the IAM Role."
+}
+
+output "codedeploy_iam_policy_id" {
+  value       = one([for it in aws_iam_policy.codedeploy : it.id])
+  description = "(CodeDeploy) The IAM Policy's ID."
+}
+
+output "codedeploy_iam_policy_arn" {
+  value       = one([for it in aws_iam_policy.codedeploy : it.arn])
+  description = "(CodeDeploy) The ARN assigned by AWS to this IAM Policy."
+}
+
+output "codedeploy_iam_policy_name" {
+  value       = one([for it in aws_iam_policy.codedeploy : it.name])
+  description = "(CodeDeploy) The name of the IAM Policy."
+}
