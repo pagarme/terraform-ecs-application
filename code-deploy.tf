@@ -90,7 +90,7 @@ resource "aws_codedeploy_deployment_group" "this" {
     target_group_pair_info {
       # The path used by a load balancer to route production traffic when an Amazon ECS deployment is complete.
       prod_traffic_route {
-        listener_arns = local.listeners_arn_set #TODO add collective of listeners
+        listener_arns = local.production_listeners
       }
 
       # One pair of target groups. One is associated with the original task set.

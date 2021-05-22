@@ -22,11 +22,17 @@ module "ecs-service" {
     alb_arn                           = aws_lb.main.arn
     container_name                    = local.container_name
     alb_security_group_id             = aws_security_group.lb_sg.id
-    certificate_arn                   = null
-    default_listener_arn              = aws_lb_listener.http.arn
-    testing_listener_port             = local.testing_port
+    production_listener_arn           = aws_lb_listener.http.arn
     health_check_grace_period_seconds = null
     target_group_additional_options   = {}
+
+    testing_listener = {
+      port            = local.testing_port
+      protocol        = local.protocol
+      ssl_policy      = null
+      certificate_arn = null
+    }
+
     health_check = {
       timeout             = 5
       interval            = 30

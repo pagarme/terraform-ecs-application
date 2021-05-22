@@ -1,7 +1,6 @@
 locals {
   # name of the service
-  name                  = "${var.name}-${var.environment}"
-  target_container_name = local.name
+  name = "${var.name}-${var.environment}"
   # log-group
   awslogs_group = "${var.cloudwatch.prefix_name}/${var.name}"
   # kms configuration
@@ -12,21 +11,16 @@ locals {
   iam_name = "${var.name}-ecs-codedeploy"
 
   # listener configuration (default)
-  listener_default_configuration = var.load_balancer.alb_arn != null ? {
-    "main" : {
-      listener_arn       = var.load_balancer.default_listener_arn
-      stickness_duration = 3000
-    }
-  } : {}
-
-  listeners_arn_set = toset([for lstnr in local.listener_default_configuration : lstnr.listener_arn])
+  production_listeners = var.load_balancer.alb_arn != null ? [var.load_balancer.production_listener_arn] : []
 
   # listener configuration (test)
-  listener_test_configuration = var.load_balancer.alb_arn != null ? {
+  listener_test_configuration = (var.load_balancer.alb_arn != null && var.load_balancer.testing_listener != null) ? {
     "main" : {
       load_balancer_arn = var.load_balancer.alb_arn
-      certificate_arn   = var.load_balancer.certificate_arn != "" ? var.load_balancer.certificate_arn : null
-      port              = var.load_balancer.testing_listener_port > 0 ? var.load_balancer.testing_listener_port : 8443
+      certificate_arn   = var.load_balancer.testing_listener.certificate_arn != "" ? var.load_balancer.testing_listener.certificate_arn : null
+      ssl_policy        = var.load_balancer.testing_listener.ssl_policy != "" ? var.load_balancer.testing_listener.ssl_policy : null
+      protocol          = var.load_balancer.testing_listener.protocol != "" ? var.load_balancer.testing_listener.protocol : "HTTP"
+      port              = var.load_balancer.testing_listener.port > 0 ? var.load_balancer.testing_listener.port : 8443
     }
   } : {}
 
