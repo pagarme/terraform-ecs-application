@@ -35,6 +35,11 @@ output "task_execution_role" {
   value       = aws_iam_role.task_execution_role
 }
 
+output "service_arn" {
+  description = "service identification ARN"
+  value       = aws_ecs_service.main.id
+}
+
 output "task_definition_arn" {
   description = "Full ARN of the Task Definition (including both family and revision)."
   value       = aws_ecs_task_definition.main.arn
@@ -59,12 +64,12 @@ output "awslogs_group_arn" {
 ##### Target groups information
 
 output "blue_target_group" {
-  value       = aws_lb_target_group.this["green"] != null ? aws_lb_target_group.this["green"].arn : null
+  value       = aws_lb_target_group.this["blue"] != null ? aws_lb_target_group.this["blue"].arn : null
   description = "(Application Load Balancer) production target groups"
 }
 
 output "green_target_group" {
-  value       = aws_lb_target_group.this["blue"] != null ? aws_lb_target_group.this["blue"].arn : null
+  value       = aws_lb_target_group.this["green"] != null ? aws_lb_target_group.this["green"].arn : null
   description = "(Application Load Balancer) production target groups"
 }
 

@@ -50,7 +50,8 @@ resource "aws_ecs_task_definition" "main" {
       requires_compatibilities,
       cpu,
       memory,
-      execution_role_arn
+      execution_role_arn,
+      container_definitions
     ]
   }
 
@@ -133,13 +134,15 @@ resource "aws_ecs_service" "main" {
   tags = var.tags
 
   depends_on = [
-    aws_lb_target_group.this
+    aws_lb_target_group.this,
+    aws_lb_listener_rule.this
   ]
 
   lifecycle {
     ignore_changes = [
       load_balancer,
-      platform_version
+      platform_version,
+      task_definition # for code deploy tasks
     ]
   }
 }

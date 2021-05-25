@@ -11,7 +11,10 @@ locals {
   iam_name = "${var.name}-ecs-codedeploy"
 
   # listener configuration (default)
-  production_listeners = var.load_balancer.alb_arn != null ? [var.load_balancer.production_listener_arn] : []
+  production_listener = var.load_balancer.alb_arn != null ? var.load_balancer.production_listener_arn : null
+
+  # listener rules configuration (default)
+  production_listener_rules = var.load_balancer.alb_arn != null ? var.load_balancer.production_listener_rules : {}
 
   # listener configuration (test)
   listener_test_configuration = (var.load_balancer.alb_arn != null && var.load_balancer.testing_listener != null) ? {
