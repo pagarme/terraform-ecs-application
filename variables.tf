@@ -124,6 +124,11 @@ variable "load_balancer" {
     container_name          = string
     alb_security_group_id   = string
     production_listener_arn = string
+    production_listener_rules = map(object({
+      priority   = number
+      actions    = set(any)
+      conditions = set(any)
+    }))
     testing_listener = object({
       port            = number
       protocol        = string
@@ -153,6 +158,17 @@ variable "load_balancer" {
     health_check_grace_period_seconds = null
     # listener from production listener
     production_listener_arn = null
+    # listener rules for production listener
+    production_listener_rules = {
+      "main" : {
+        # priority of the rule
+        priority = 10
+        # actions of listener rule https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener_rule#action-blocks
+        actions = []
+        # conditions of listener rule https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener_rule#condition-blocks
+        conditions = []
+      }
+    }
     # additional config from load balancer, this is a map for any configuration from terraform resource (see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group#argument-reference)
     target_group_additional_options = {}
     # testing listener (deployment pass deploy)
