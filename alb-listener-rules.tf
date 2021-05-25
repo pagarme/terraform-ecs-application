@@ -93,7 +93,7 @@ resource "aws_lb_listener_rule" "this" {
     }
   }
 
-  # action forward is not configurable, use the blue target (the last action is aways forward to blue)
+  # action forward is not configurable, use the blue target (the last action is always forward to blue)
   action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.this["blue"].arn
