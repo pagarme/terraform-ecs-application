@@ -156,7 +156,7 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
     ]
 
     resources = [
-      aws_ecs_service.main.arn,
+      aws_ecs_service.main.id,
       aws_ecs_task_definition.main.arn
     ]
   }
@@ -177,7 +177,7 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
       "ssm:GetParameters",
     ]
 
-    resources = var.ecr_ssm_parameters_arn
+    resources = var.ssm_parameters_arn
   }
 
 }

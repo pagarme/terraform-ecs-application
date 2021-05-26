@@ -10,6 +10,9 @@ locals {
   # iam
   iam_name = "${var.name}-ecs-codedeploy"
 
+  # security group of alb if have alb
+  alb_security_group_ids = var.load_balancer.alb_arn != null ? compact([var.load_balancer.alb_security_group_id]) : []
+
   # listener configuration (default)
   production_listener = var.load_balancer.alb_arn != null ? var.load_balancer.production_listener_arn : null
 

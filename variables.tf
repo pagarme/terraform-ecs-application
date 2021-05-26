@@ -262,7 +262,7 @@ variable "service_registries" {
 }
 
 
-variable "ecr_ssm_parameters_arn" {
+variable "ssm_parameters_arn" {
   description = "set of ssm parameters arn to enable access to job"
   type        = set(string)
   default     = []
