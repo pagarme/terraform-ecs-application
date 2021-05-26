@@ -287,7 +287,7 @@ No modules.
 | <a name="input_name"></a> [name](#input\_name) | The service name. | `string` | n/a | yes |
 | <a name="input_networking"></a> [networking](#input\_networking) | network configuration for the service | <pre>object({<br>    vpc_id           = string<br>    subnet_ids       = set(string)<br>    assign_public_ip = bool<br>  })</pre> | n/a | yes |
 | <a name="input_service_registries"></a> [service\_registries](#input\_service\_registries) | List of service registry objects as per <https://www.terraform.io/docs/providers/aws/r/ecs_service.html#service_registries-1>. List can only have a single object until <https://github.com/terraform-providers/terraform-provider-aws/issues/9573> is resolved. | <pre>set(object({<br>    registry_arn   = string<br>    container_name = string<br>    container_port = number<br>    port           = number<br>  }))</pre> | `[]` | no |
-| <a name="input_ssm_parameters_arn"></a> [ssm\_parameters\_arn](#input\_ssm\_parameters\_arn) | set of ssm parameters arn to enable access to job | `set(string)` | `[]` | no |
+| <a name="input_ssm_parameter_arns"></a> [ssm\_parameter\_arns](#input\_ssm\_parameter\_arns) | set of ssm parameters arn to enable access to job | `set(string)` | `[]` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | tags for resources | `map(string)` | <pre>{<br>  "module": "terraform-ecs-application"<br>}</pre> | no |
 | <a name="input_tasks_desired_count"></a> [tasks\_desired\_count](#input\_tasks\_desired\_count) | The number of instances of a task definition. | `number` | `1` | no |
 | <a name="input_tasks_maximum_percent"></a> [tasks\_maximum\_percent](#input\_tasks\_maximum\_percent) | Upper limit on the number of running tasks. | `number` | `200` | no |

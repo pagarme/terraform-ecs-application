@@ -167,7 +167,7 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
     ]
 
     resources = [
-      one(aws_iam_role.task_role).arn
+      aws_iam_role.task_role.arn
     ]
   }
 
@@ -177,7 +177,7 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
       "ssm:GetParameters",
     ]
 
-    resources = var.ssm_parameters_arn
+    resources = var.ssm_parameter_arns
   }
 
 }
