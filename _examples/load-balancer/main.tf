@@ -12,11 +12,13 @@ resource "aws_ecs_cluster" "main" {
 module "ecs-service" {
   source = "../../"
 
-  name            = var.test_name
-  ecs_cluster     = aws_ecs_cluster.main
-  environment     = local.environment
-  container_port  = local.container_port
-  ecs_use_fargate = true
+  name               = var.test_name
+  ecs_cluster        = aws_ecs_cluster.main
+  environment        = local.environment
+  container_port     = local.container_port
+  ecs_use_fargate    = true
+  ssm_parameters_arn = ["*"]
+  ecr_repo_arns      = ["*"]
 
   load_balancer = {
     alb_arn                           = aws_lb.main.arn
@@ -25,6 +27,7 @@ module "ecs-service" {
     production_listener_arn           = aws_lb_listener.http.arn
     health_check_grace_period_seconds = null
     target_group_additional_options   = {}
+    production_listener_rules         = null
 
     testing_listener = {
       port            = local.testing_port
