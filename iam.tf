@@ -90,6 +90,14 @@ data "aws_iam_policy_document" "ecs_assume_role_policy" {
   }
 }
 
+
+resource "aws_iam_role" "task_role" {
+  name               = "ecs-task-role-${var.name}-${var.environment}"
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role_policy.json
+  tags               = var.tags
+}
+
+
 data "aws_iam_policy_document" "task_execution_role_policy_doc" {
   statement {
     actions = [
@@ -110,19 +118,68 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
 
   statement {
     actions = [
-      "ecr:BatchCheckLayerAvailability",
       "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:DescribeRepositories",
       "ecr:BatchGetImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:PutImage",
+      "ecr:ListImages",
     ]
 
     resources = var.ecr_repo_arns
   }
-}
 
-resource "aws_iam_role" "task_role" {
-  name               = "ecs-task-role-${var.name}-${var.environment}"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role_policy.json
-  tags               = var.tags
+
+  statement {
+    actions = [
+      "ecs:ListClusters",
+      "ecs:ListTaskDefinitions",
+      "ecs:RegisterTaskDefinition",
+      "ecs:DeregisterTaskDefinition",
+      "ecs:ListTasks",
+      "ecs:DescribeTasks",
+      "ecs:DescribeTaskDefinition",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "ecs:DescribeServices",
+      "ecs:StartTask",
+      "ecs:StopTask",
+      "ecs:UpdateService",
+    ]
+
+    resources = [
+      aws_ecs_service.main.arn,
+      aws_ecs_task_definition.main.arn
+    ]
+  }
+
+  statement {
+    actions = [
+      "iam:PassRole",
+    ]
+
+    resources = [
+      one(aws_iam_role.task_role).arn
+    ]
+  }
+
+  statement {
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+    ]
+
+    resources = var.ecr_ssm_parameters_arn
+  }
+
 }
 
 resource "aws_iam_role" "task_execution_role" {
@@ -139,3 +196,5 @@ resource "aws_iam_role_policy" "task_execution_role_policy" {
   role   = one(aws_iam_role.task_execution_role).name
   policy = data.aws_iam_policy_document.task_execution_role_policy_doc.json
 }
+
+

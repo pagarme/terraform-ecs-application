@@ -63,9 +63,9 @@ variable "cloudwatch" {
 ### IAM
 
 variable "ecr_repo_arns" {
-  description = "The ARNs of the ECR repos.  By default, allows all repositories."
+  description = "The ARNs of the ECR repos"
   type        = set(string)
-  default     = ["*"]
+  default     = []
 }
 
 variable "ecs_instance_role" {
@@ -259,6 +259,13 @@ variable "service_registries" {
     port           = number
   }))
   default = []
+}
+
+
+variable "ecr_ssm_parameters_arn" {
+  description = "set of ssm parameters arn to enable access to job"
+  type        = set(string)
+  default     = []
 }
 
 #### TAGS
