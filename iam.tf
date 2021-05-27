@@ -197,4 +197,11 @@ resource "aws_iam_role_policy" "task_execution_role_policy" {
   policy = data.aws_iam_policy_document.task_execution_role_policy_doc.json
 }
 
+resource "aws_iam_role_policy" "task_execution_role_policy_in_task_role" {
+  count = var.ecs_use_fargate ? 1 : 0
+
+  name   = "${aws_iam_role.task_execution_role[count.index].name}-policy-in-task-role"
+  role   = aws_iam_role.task_role.name
+  policy = data.aws_iam_policy_document.task_execution_role_policy_doc.json
+}
 
