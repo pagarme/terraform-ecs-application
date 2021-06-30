@@ -1,7 +1,7 @@
 ### TARGET GROUPS AND LISTENERS CONFIGURATION
 
 resource "aws_lb_target_group" "this" {
-  for_each = local.target_groups
+  for_each = local.has_load_balancer == true ? local.target_groups: {}
 
 
   name        = lookup(each.value, "name", null)

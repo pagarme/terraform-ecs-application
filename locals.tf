@@ -6,6 +6,8 @@ locals {
   # kms configuration
   kms_key_id = var.kms_key_id == "" ? null : var.kms_key_id
 
+  #check if an ALB will be created
+  has_load_balancer = var.load_balancer.alb_arn == null ? false: true
 
   # iam
   iam_name = "${var.name}-ecs-codedeploy"

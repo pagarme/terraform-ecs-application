@@ -110,7 +110,7 @@ resource "aws_ecs_service" "main" {
   }
 
   dynamic "load_balancer" {
-    for_each = local.production_target_groups
+    for_each = local.has_load_balancer == true ? local.production_target_groups : {}
     content {
       container_name   = var.load_balancer.container_name != null ? var.load_balancer.container_name : aws_lb_target_group.this[load_balancer.key].name
       target_group_arn = aws_lb_target_group.this[load_balancer.key].arn
