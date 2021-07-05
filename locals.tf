@@ -7,7 +7,7 @@ locals {
   kms_key_id = var.kms_key_id == "" ? null : var.kms_key_id
 
   #check if an ALB will be created
-  has_load_balancer = var.load_balancer.alb_arn == null ? false: true
+  has_load_balancer = var.load_balancer.alb_arn == null ? false : true
 
   # iam
   iam_name = "${var.name}-ecs-codedeploy"
@@ -33,7 +33,7 @@ locals {
   } : {}
 
   # deployment configuration
-  deployment_configuration = var.deployment.deployment_controller == "CODE_DEPLOY" ? {
+  deployment_configuration = var.deployment.deployment_controller == "CODE_DEPLOY" && local.has_load_balancer ? {
     "main" : {
       name                             = local.name
       description                      = var.deployment.description
@@ -53,7 +53,7 @@ locals {
   green_id = "green"
 
   # canary tg groups
-  target_groups = {
+  target_groups = local.has_load_balancer ? {
     for tgs in [local.blue_id, local.green_id] :
     tgs => merge({
       name             = "${tgs}-${local.name}-${var.container_port}"
@@ -62,9 +62,9 @@ locals {
       target_type      = "ip"
       health_check     = lookup(var.load_balancer, "health_check", null)
     }, lookup(var.load_balancer, "target_group_additional_options", {}))
-  }
+  } : {}
 
-  production_target_groups = {
+  production_target_groups = local.has_load_balancer ? {
     for tgs in [local.blue_id] :
     tgs => merge({
       name             = "${tgs}-${local.name}-${var.container_port}"
@@ -73,7 +73,7 @@ locals {
       target_type      = "ip"
       health_check     = lookup(var.load_balancer, "health_check", null)
     }, lookup(var.load_balancer, "target_group_additional_options", {}))
-  }
+  } : {}
 
 
   ecs_service_launch_type  = var.ecs_use_fargate ? "FARGATE" : "EC2"
@@ -103,4 +103,7 @@ locals {
   }
 
   ecs_service_security_groups = setunion([aws_security_group.ecs_sg.id], var.additional_security_group_ids)
+
+  # deployment controller
+  type_deployment_controller = local.deployment_configuration == {}
 }
