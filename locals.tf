@@ -104,6 +104,4 @@ locals {
 
   ecs_service_security_groups = setunion([aws_security_group.ecs_sg.id], var.additional_security_group_ids)
 
-  # deployment controller
-  type_deployment_controller = local.deployment_configuration == {}
 }
