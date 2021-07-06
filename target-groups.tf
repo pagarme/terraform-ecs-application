@@ -3,7 +3,6 @@
 resource "aws_lb_target_group" "this" {
   for_each = local.target_groups
 
-
   name        = lookup(each.value, "name", null)
   name_prefix = lookup(each.value, "name_prefix", null)
 

@@ -64,12 +64,12 @@ output "awslogs_group_arn" {
 ##### Target groups information
 
 output "blue_target_group" {
-  value       = aws_lb_target_group.this["blue"] != null ? aws_lb_target_group.this["blue"].arn : null
+  value       = try(aws_lb_target_group.this["blue"].arn,null)
   description = "(Application Load Balancer) production target groups"
 }
 
 output "green_target_group" {
-  value       = aws_lb_target_group.this["green"] != null ? aws_lb_target_group.this["green"].arn : null
+  value       = try(aws_lb_target_group.this["green"].arn,null)
   description = "(Application Load Balancer) production target groups"
 }
 
