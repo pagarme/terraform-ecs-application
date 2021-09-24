@@ -1,7 +1,7 @@
 resource "aws_lb_listener_rule" "this" {
-  for_each = local.production_listener_rules
+  for_each = var.listener_rules
 
-  listener_arn = local.production_listener
+  listener_arn = var.listener_arn
   priority     = lookup(each.value, "priority", null)
 
   # authenticate-cognito actions

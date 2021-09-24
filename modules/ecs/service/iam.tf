@@ -12,7 +12,7 @@ data "aws_iam_policy_document" "instance_role_policy_doc" {
       "ecs:Submit*",
     ]
 
-    resources = [var.ecs_cluster.arn]
+    resources = [var.ecs_cluster_arn]
   }
 
   statement {
@@ -25,7 +25,7 @@ data "aws_iam_policy_document" "instance_role_policy_doc" {
     condition {
       test     = "StringEquals"
       variable = "ecs:cluster"
-      values   = [var.ecs_cluster.arn]
+      values   = [var.ecs_cluster_arn]
     }
   }
 
@@ -70,33 +70,10 @@ data "aws_iam_policy_document" "instance_role_policy_doc" {
 resource "aws_iam_role_policy" "instance_role_policy" {
   count = var.ecs_use_fargate ? 0 : 1
 
-  name   = "${local.name}-policy"
+  name   = "${var.name}-policy"
   role   = var.ecs_instance_role
   policy = one(data.aws_iam_policy_document.instance_role_policy_doc).json
 }
-
-#
-# IAM - task
-#
-
-data "aws_iam_policy_document" "ecs_assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
-}
-
-
-resource "aws_iam_role" "task_role" {
-  name               = "ecs-task-role-${var.name}-${var.environment}"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role_policy.json
-  tags               = var.tags
-}
-
 
 data "aws_iam_policy_document" "task_execution_role_policy_doc" {
   statement {
@@ -179,13 +156,12 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
 
     resources = var.ssm_parameter_arns
   }
-
 }
 
 resource "aws_iam_role" "task_execution_role" {
   count = var.ecs_use_fargate ? 1 : 0
 
-  name               = "ecs-task-execution-role-${var.name}-${var.environment}"
+  name               = "ecs-task-execution-role-${var.name}"
   assume_role_policy = data.aws_iam_policy_document.ecs_assume_role_policy.json
 }
 
@@ -197,4 +173,8 @@ resource "aws_iam_role_policy" "task_execution_role_policy" {
   policy = data.aws_iam_policy_document.task_execution_role_policy_doc.json
 }
 
-
+resource "aws_iam_role" "task_role" {
+  name               = "ecs-task-role-${var.name}"
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role_policy.json
+  tags               = var.tags
+}

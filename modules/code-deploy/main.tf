@@ -78,7 +78,7 @@ resource "aws_codedeploy_deployment_group" "this" {
 
   # Configuration block(s) of the ECS services for a deployment group.
   ecs_service {
-    cluster_name = var.ecs_cluster.name
+    cluster_name = var.ecs_cluster_name
     service_name = var.name
   }
 
@@ -90,13 +90,13 @@ resource "aws_codedeploy_deployment_group" "this" {
     target_group_pair_info {
       # The path used by a load balancer to route production traffic when an Amazon ECS deployment is complete.
       prod_traffic_route {
-        listener_arns = compact([local.production_listener])
+        listener_arns = compact([var.production_listener_arn])
       }
 
       # One pair of target groups. One is associated with the original task set.
       # The second target is associated with the task set that serves traffic after the deployment completes.
       dynamic "target_group" {
-        for_each = local.target_groups
+        for_each = var.target_groups
         content {
           name = target_group.value.name
         }
@@ -105,158 +105,13 @@ resource "aws_codedeploy_deployment_group" "this" {
       # One pair of target groups. One is associated with the original task set.
       # The second target is associated with the task set that serves traffic after the deployment completes.
       dynamic "test_traffic_route" {
-        for_each = local.listener_test_configuration
+        for_each = var.listener_test_configuration
         content {
-          listener_arns = [aws_lb_listener.testing_route[test_traffic_route.key].arn]
+          listener_arns = [var.testing_route[test_traffic_route.key].arn]
         }
       }
     }
   }
 
   tags = var.tags
-
-  depends_on = [
-    aws_ecs_service.main
-  ]
 }
-
-data "aws_iam_policy_document" "assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["codedeploy.amazonaws.com"]
-    }
-  }
-}
-
-# ECS AWS CodeDeploy IAM Role
-#
-# https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/codedeploy_IAM_role.html
-
-# https://www.terraform.io/docs/providers/aws/r/iam_role.html
-resource "aws_iam_role" "codedeploy" {
-  for_each = local.deployment_configuration
-
-  name               = "${local.iam_name}-${each.key}"
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-  path               = "/"
-  description        = each.value.description
-  tags = merge(
-    {
-      "Name" = "${local.iam_name}-${each.key}"
-    },
-    var.tags,
-  )
-}
-
-data "aws_iam_policy_document" "policy_deployer" {
-  # If the tasks in your Amazon ECS service using the blue/green deployment type require the use of
-  # the task execution role or a task role override, then you must add the iam:PassRole permission
-  # for each task execution role or task role override to the AWS CodeDeploy IAM role as an inline policy.
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "iam:PassRole",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "ecs:DescribeServices",
-      "ecs:CreateTaskSet",
-      "ecs:UpdateServicePrimaryTaskSet",
-      "ecs:DeleteTaskSet",
-      "cloudwatch:DescribeAlarms",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "sns:Publish",
-    ]
-
-    resources = ["arn:aws:sns:*:*:CodeDeployTopic_*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "elasticloadbalancing:DescribeTargetGroups",
-      "elasticloadbalancing:DescribeListeners",
-      "elasticloadbalancing:ModifyListener",
-      "elasticloadbalancing:DescribeRules",
-      "elasticloadbalancing:ModifyRule",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "lambda:InvokeFunction",
-    ]
-
-    #TODO fix lambda ref
-    resources = ["arn:aws:lambda:*:*:function:CodeDeployHook_*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "s3:GetObject",
-      "s3:GetObjectMetadata",
-      "s3:GetObjectVersion",
-    ]
-
-    condition {
-      test     = "StringEquals"
-      variable = "s3:ExistingObjectTag/UseWithCodeDeploy"
-      values   = ["true"]
-    }
-
-    resources = ["*"]
-  }
-}
-
-# https://www.terraform.io/docs/providers/aws/r/iam_policy.html
-resource "aws_iam_policy" "codedeploy" {
-  for_each = local.deployment_configuration
-
-  name        = "${local.iam_name}-${each.key}"
-  policy      = data.aws_iam_policy_document.policy_deployer.json
-  path        = "/"
-  description = each.value.description
-
-  tags = merge(
-    {
-      "Name" = "${local.iam_name}-${each.key}"
-    },
-    var.tags,
-  )
-}
-
-
-
-# https://www.terraform.io/docs/providers/aws/r/iam_role_policy_attachment.html
-resource "aws_iam_role_policy_attachment" "codedeploy" {
-  for_each = local.deployment_configuration
-
-  role       = aws_iam_role.codedeploy[each.key].name
-  policy_arn = aws_iam_policy.codedeploy[each.key].arn
-}
-

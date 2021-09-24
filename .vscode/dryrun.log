@@ -1,0 +1,6 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/nathanael/github.com/pagarme/terraform-ecs-application'
+make: Leaving directory '/home/nathanael/github.com/pagarme/terraform-ecs-application'
+ 
+make: *** No rule to make target '/usr/local/bin/pre-commit', needed by '.git/hooks/pre-commit'.
+ 
