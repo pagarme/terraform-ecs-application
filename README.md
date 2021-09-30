@@ -1,10 +1,11 @@
 # Terraform ECS Application
 
-This module generate all core resources of ECS Application. you can use with Application load balancer and deploy securely with [CodeDeploy](https://aws.amazon.com/pt/codedeploy/).
+Esse módulo é responsável por criar todos os recursos de aplicações executando em ECS. Além disso,
+pode ser usado com Application Load Balancer e [CodeDeploy](https://aws.amazon.com/pt/codedeploy/).
 
-## Inspiration
+## Sobre
 
-We used these public modules to generate this module in a single one resource module:
+Os seguintes módulos pṹblicos foram usados como base para esse:
 
 * [ECS service from Trussworks](https://registry.terraform.io/modules/trussworks/ecs-service/aws/latest)
 * [Official alb module from AWS](https://registry.terraform.io/modules/terraform-aws-modules/alb/aws/latest)
@@ -20,205 +21,29 @@ This modules are **excelents**, but we need to customize some itens.
 * Convert some variables from list(some_type) to set(some_type) (sets are immutable when change order of the elements)
 * Converge all decision in a single `locals` block (better to manage changes and code review)
 
-## Features inner this module
+## Funcionalidades
 
-* Runs an ECS service with or without an AWS load balancer.
-* Stream logs to a CloudWatch log group encrypted with a KMS key.
+* Executar um serviço do ECS com ou sem um aws load balancer;
+* Habilitar fluxo de logs para um log group do Cloudwatch encriptado com chave KMS;
+
+
 * Create BLUE/GREEN target groups to connect in multiples Listeners in a Application Load Balancers (ALB).
 * Run deploy under Canary or Linear or Blue/Green Deployments under CodeDeploy.
 * Plug Code deploy with Custom Lambda Function to enable Traffic using functional Tests.
 
 ![simple-diagram](docs/module-content.jpg)
 
-## Terraform Versions
+## Versões do Terraform
 
 Terraform 0.15+. Pin module version to ~> 6.0. Submit pull-requests to master branch.
 
-## Usage
+## Como Usar
 
-### ECS service associated with an Application Load Balancer (ALB) and CodeDeploy
+Exemplos de uso podem ser vistos no diretório [`_examples/`](./_examples).
 
-```hcl
-module "ecs-service" {
-  source = "pagarme/ecs-application/aws"
+## Limitações conhecidas
 
-  name            = "my web application"
-  ecs_cluster     = aws_ecs_cluster.my_cluster
-  environment     = "production"
-  container_port  = 3000
-  ecs_use_fargate = true
-
-  load_balancer = {
-    # arn of the load balancer (Application Load Balancer)
-    alb_arn                           = aws_lb.my_load_balancer.arn
-    # main container name from task definition
-    container_name                    = "hello_world"
-    # security group of the load balancer (rules will be added from module)
-    alb_security_group_id             = aws_security_group.my_load_balancer.id
-    # listener to use for blue/green targets
-    production_listener_arn           = aws_lb_listener.http.arn
-    # Time in seconds do wait container to be ready for connections
-    health_check_grace_period_seconds = null
-    # All properties from lb_target_group (except health_check) will be passed here
-    target_group_additional_options   = {}
-    # listener for test before enable traffic
-    testing_listener = {
-      # port to use for tests in traffic shift (the test listener will be created inner module)
-      port            = local.testing_port
-      #testing listener protocol
-      protocol        = local.protocol
-      #testing listener ssl policy (if https)
-      ssl_policy      = null
-      # you can use certificate to associate with Test listener (if https)
-      certificate_arn = null
-    }
-    # you can use all configuration from health_check property from lb_target_group resource
-    health_check = {
-      timeout             = 5
-      interval            = 30
-      path                = "/health"
-      protocol            = "HTTP"
-      healthy_threshold   = 3
-      unhealthy_threshold = 3
-      matcher             = "200-399"
-    }
-  }
-
-  # only if deployment_controller = CODE_DEPLOY, codedeploy will be created
-  deployment = {
-    description                      = "deployer"
-    deployment_controller            = "CODE_DEPLOY"
-    deployment_config_name           = "CodeDeployDefault.ECSCanary10Percent5Minutes"
-    auto_rollback_enabled            = true
-    auto_rollback_events             = ["DEPLOYMENT_FAILURE"]
-    action_on_timeout                = "STOP_DEPLOYMENT"
-    wait_time_in_minutes             = 20
-    termination_wait_time_in_minutes = 20
-  }
-
-  container_definitions = <<TASK DEFINITION HERE>>
-
-  cloudwatch = {
-    prefix_name       = local.log_prefix
-    retention_in_days = 7
-  }
-
-  networking = {
-    subnet_ids       = local.subnet_ids
-    vpc_id           = local.vpc_id
-    assign_public_ip = true
-  }
-
-  tags = local.tags # we pass any string map and will be added in all resources.
-}
-
-```
-
-### ECS service associated with an Application Load Balancer (ALB) and CodeDeploy without Testing Listener
-
-```hcl
-module "ecs-service" {
-  source = "pagarme/ecs-application/aws"
-
-  name            = "my web application"
-  ecs_cluster     = aws_ecs_cluster.my_cluster
-  environment     = "production"
-  container_port  = 3000
-  ecs_use_fargate = true
-
-  load_balancer = {
-    # arn of the load balancer (Application Load Balancer)
-    alb_arn                           = aws_lb.my_load_balancer.arn
-    # main container name from task definition
-    container_name                    = "hello_world"
-    # security group of the load balancer (rules will be added from module)
-    alb_security_group_id             = aws_security_group.my_load_balancer.id
-    # listener to use for blue/green targets
-    production_listener_arn           = aws_lb_listener.http.arn
-    # Time in seconds do wait container to be ready for connections
-    health_check_grace_period_seconds = null
-    # All properties from lb_target_group (except health_check) will be passed here
-    target_group_additional_options   = {}
-    # you can use all configuration from health_check property from lb_target_group resource
-    health_check = {
-      timeout             = 5
-      interval            = 30
-      path                = "/health"
-      protocol            = "HTTP"
-      healthy_threshold   = 3
-      unhealthy_threshold = 3
-      matcher             = "200-399"
-    }
-  }
-
-  # only if deployment_controller = CODE_DEPLOY, codedeploy will be created
-  deployment = {
-    description                      = "deployer"
-    deployment_controller            = "CODE_DEPLOY"
-    deployment_config_name           = "CodeDeployDefault.ECSCanary10Percent5Minutes"
-    auto_rollback_enabled            = true
-    auto_rollback_events             = ["DEPLOYMENT_FAILURE"]
-    action_on_timeout                = "STOP_DEPLOYMENT"
-    wait_time_in_minutes             = 20
-    termination_wait_time_in_minutes = 20
-  }
-
-  container_definitions = <<TASK DEFINITION HERE>>
-
-  cloudwatch = {
-    prefix_name       = local.log_prefix
-    retention_in_days = 7
-  }
-
-  networking = {
-    subnet_ids       = local.subnet_ids
-    vpc_id           = local.vpc_id
-    assign_public_ip = true
-  }
-
-  tags = local.tags # we pass any string map and will be added in all resources.
-}
-
-```
-
-### ECS service associated WITHOUT Application Load Balancer (ALB) and WITHOUT CodeDeploy
-
-```hcl
-module "ecs-service" {
-  source = "pagarme/ecs-application/aws"
-
-  name            = "my web application"
-  ecs_cluster     = aws_ecs_cluster.my_cluster
-  environment     = "production"
-  container_port  = 3000
-  ecs_use_fargate = true
-
-  # if no load_balancer definition, we don't create any resource (targets and test listener)
-
-  container_definitions = <<TASK DEFINITION HERE>>
-
-
-  # without load balancer we cant manage shift of the versions
-
-  cloudwatch = {
-    prefix_name       = local.log_prefix
-    retention_in_days = 7
-  }
-
-  networking = {
-    subnet_ids       = local.subnet_ids
-    vpc_id           = local.vpc_id
-    assign_public_ip = true
-  }
-
-  tags = local.tags # we pass any string map and will be added in all resources.
-}
-```
-
-## Limitations (Some limitations we be solved later)
-
-* Only with load balancer, we have CodeDeploy
-* If you will use Service Discovery from AWS, we can't help you with CodeDeploy (AWS Limitation?)
+* É possível ter aws load balancer apenas se tiver codedeploy
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
