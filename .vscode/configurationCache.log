@@ -1,1 +1,0 @@
-{"buildTargets":["clean","ensure_pre_commit","pre_commit_tests","test"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}
