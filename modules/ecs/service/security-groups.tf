@@ -25,14 +25,14 @@ resource "aws_security_group_rule" "app_ecs_allow_outbound" {
 resource "aws_security_group_rule" "app_ecs_allow_conn_from_container_to_alb" {
   # if we have an alb, then create security group rules for the container
   # ports
-  for_each = var.alb_security_group_ids
+  for_each = var.source_security_group_ids
 
   description       = "Allow container service ${var.name} connection to lb (for target groups)"
   security_group_id = aws_security_group.ecs_sg.id
 
   type                     = "ingress"
-  from_port                = var.container_port
-  to_port                  = var.container_port
+  from_port                = var.load_balancer.container_port
+  to_port                  = var.load_balancer.container_port
   protocol                 = "tcp"
   source_security_group_id = each.key
 }

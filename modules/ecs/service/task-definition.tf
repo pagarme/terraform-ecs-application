@@ -7,8 +7,8 @@ resource "aws_ecs_task_definition" "main" {
 
   # Fargate requirements
   requires_compatibilities = compact([var.ecs_use_fargate ? "FARGATE" : ""])
-  cpu                      = var.ecs_use_fargate ? var.fargate_options.task_cpu : ""
-  memory                   = var.ecs_use_fargate ? var.fargate_options.task_memory : ""
+  cpu                      = var.cpu
+  memory                   = var.memory
   execution_role_arn       = join("", aws_iam_role.task_execution_role.*.arn)
 
   container_definitions = var.container_definitions

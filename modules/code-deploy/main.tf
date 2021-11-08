@@ -101,15 +101,6 @@ resource "aws_codedeploy_deployment_group" "this" {
           name = target_group.value.name
         }
       }
-
-      # One pair of target groups. One is associated with the original task set.
-      # The second target is associated with the task set that serves traffic after the deployment completes.
-      dynamic "test_traffic_route" {
-        for_each = var.listener_test_configuration
-        content {
-          listener_arns = [var.testing_route[test_traffic_route.key].arn]
-        }
-      }
     }
   }
 

@@ -1,35 +1,9 @@
-#                            ▄▄▄▄▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▄▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                               ▀▀▀▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                                      ▀▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                                          ▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                                             ▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                                               ▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-#                                                 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-#                      ▄▄▓▓▓▓▓▓▓▄▄                 ▀▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                  ▄▄▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄               ▀▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌              ▓▓▓▓▓▓▓▓▓▓▓▓▓
-#               ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓             ▐▓▓▓▓▓▓▓▓▓▓▓▓▌
-#               ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓             ▓▓▓▓▓▓▓▓▓▓▓▓▌
-#              ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌            ▓▓▓▓▓▓▓▓▓▓▓▓▓
-#              ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-#               ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-#               ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-#                 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                   ▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▀
-#                      ▀▀▀▓▓▓▓▓▀▀▀
-# Pagar.me pagamentos, uma empresa do grupo Stone.
-
 resource "aws_ecs_service" "main" {
   name    = var.name
   cluster = var.ecs_cluster_arn
 
-  launch_type      = local.ecs_service_launch_type
-  platform_version = local.fargate_platform_version
+  launch_type      = var.launch_type
+  platform_version = var.launch_type == "FARGATE" ? var.platform_version : null
 
   # Use latest active revision
   task_definition = "${aws_ecs_task_definition.main.family}:${max(
@@ -37,16 +11,16 @@ resource "aws_ecs_service" "main" {
     data.aws_ecs_task_definition.main.revision,
   )}"
 
-  desired_count                      = var.tasks_desired_count
-  deployment_minimum_healthy_percent = var.tasks_minimum_healthy_percent
-  deployment_maximum_percent         = var.tasks_maximum_percent
+  desired_count                      = var.desired_count
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  deployment_maximum_percent         = var.deployment_maximum_percent
 
   deployment_controller {
-    type = var.deployment_controller
+    type = var.deployment_controller_type
   }
 
   dynamic "ordered_placement_strategy" {
-    for_each = local.ecs_service_ordered_placement_strategy[local.ecs_service_launch_type]
+    for_each = local.ordered_placement_strategy[var.launch_type]
 
     content {
       type  = ordered_placement_strategy.value.type
@@ -55,7 +29,7 @@ resource "aws_ecs_service" "main" {
   }
 
   dynamic "placement_constraints" {
-    for_each = local.ecs_service_placement_constraints[local.ecs_service_launch_type]
+    for_each = local.placement_constraints[var.launch_type]
 
     content {
       type = placement_constraints.value.type
@@ -63,39 +37,20 @@ resource "aws_ecs_service" "main" {
   }
 
   network_configuration {
-    subnets          = var.networking.subnet_ids
-    assign_public_ip = var.networking.assign_public_ip
-    security_groups  = local.ecs_service_security_groups
+    subnets          = var.network_configuration.subnet
+    assign_public_ip = var.network_configuration.assign_public_ip
+    security_groups  = [aws_security_group.ecs_sg.id]
   }
 
-  dynamic "load_balancer" {
-    for_each = local.production_target_groups
-    content {
-      container_name   = var.load_balancer.container_name != null ? var.load_balancer.container_name : aws_lb_target_group.this[load_balancer.key].name
-      target_group_arn = aws_lb_target_group.this[load_balancer.key].arn
-      container_port   = load_balancer.value.backend_port
-    }
+  load_balancer {
+    container_name   = var.load_balancer.container_name
+    target_group_arn = var.load_balancer.target_group_arn
+    container_port   = var.load_balancer.container_port
   }
 
-
-  health_check_grace_period_seconds = var.load_balancer.alb_arn != null ? var.load_balancer.health_check_grace_period_seconds : null
-
-  dynamic "service_registries" {
-    for_each = var.service_registries
-    content {
-      registry_arn   = service_registries.value.registry_arn
-      container_name = service_registries.value.container_name
-      container_port = service_registries.value.container_port
-      port           = service_registries.value.port
-    }
-  }
+  health_check_grace_period_seconds = var.health_check_grace_period_seconds
 
   tags = var.tags
-
-  depends_on = [
-    aws_lb_target_group.this,
-    aws_lb_listener_rule.this
-  ]
 
   lifecycle {
     ignore_changes = [

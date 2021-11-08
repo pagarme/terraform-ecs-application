@@ -31,14 +31,9 @@ variable "deployment" {
   }
 }
 
-variable "ecs_cluster_name" {
-  description = "ECS cluster name."
+variable "ecs_cluster_arn" {
+  description = "ECS cluster arn."
   type        = string
-}
-
-variable "listener_test_configuration" {
-  type        = map(string)
-  description = ""
 }
 
 variable "name" {
@@ -62,9 +57,4 @@ variable "tags" {
 variable "target_groups" {
   type        = object({})
   description = "(optional) describe your variable"
-}
-
-variable "testing_route" {
-  type        = map(string)
-  description = ""
 }
