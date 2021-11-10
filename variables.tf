@@ -1,279 +1,197 @@
-### BASIC CONFIG
+variable "code_deploy_auto_rollback_enabled" {
+  type        = bool
+  description = "Indicates whether a defined automatic rollback configuration is currently enabled for this Deployment Group. If you enable automatic rollback, you must specify at least one event type. Default: true"
+  default     = true
+}
 
-variable "environment" {
-  description = "Environment tag, e.g prod."
+variable "code_deploy_auto_rollback_events" {
+  type        = set(string)
+  description = "The event type or types that trigger a rollback. Supported types are DEPLOYMENT_FAILURE and DEPLOYMENT_STOP_ON_ALARM. Default: [DEPLOYMENT_FAILURE]"
+  default     = ["DEPLOYMENT_FAILURE"]
+}
+
+variable "code_deploy_deployment_config_name" {
   type        = string
+  description = "The name of the group's deployment config."
+}
+
+variable "code_deploy_deployment_ready_option_action_on_timeout" {
+  type        = string
+  description = "When to reroute traffic from an original environment to a replacement environment in a blue/green deployment. Supported types are CONTINUE_DEPLOYMENT and STOP_DEPLOYMENT."
+}
+
+variable "code_deploy_deployment_ready_option_wait_time_in_minutes" {
+  type        = number
+  description = "The number of minutes to wait before the status of a blue/green deployment changed to Stopped if rerouting is not started manually. Applies only to the STOP_DEPLOYMENT option for action_on_timeout. Default: 20"
+  default     = 20
+}
+
+variable "code_deploy_deployment_termination_wait_time_in_minutes" {
+  type        = number
+  description = "The number of minutes to wait after a successful blue/green deployment before terminating instances from the original environment. Default: 20"
+  default     = 20
+}
+
+variable "code_deploy_ecs_cluster_name" {
+  type        = string
+  description = "The name of the ECS cluster."
+}
+
+variable "code_deploy_load_balancer_production_listener_arns" {
+  type        = set(string)
+  description = "List of Amazon Resource Names (ARNs) of the load balancer listeners."
+}
+
+variable "code_deploy_load_balancer_target_groups_health_check_healthy_threshold" {
+  type        = number
+  description = "Number of consecutive health checks successes required before considering an unhealthy target healthy. Defaults to 3."
+  default     = 3
+}
+
+variable "code_deploy_load_balancer_target_groups_health_check_interval" {
+  type        = number
+  description = "Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds. Default: 30"
+  default     = 30
+}
+
+variable "code_deploy_load_balancer_target_groups_health_check_matcher" {
+  type        = string
+  description = "Response codes to use when checking for a healthy responses from a target. Default: 200-299"
+  default     = "200-299"
+}
+
+variable "code_deploy_load_balancer_target_groups_health_check_path" {
+  type        = string
+  description = "Destination for the health check request."
+  default     = "/"
+}
+
+variable "code_deploy_load_balancer_target_groups_health_check_protocol" {
+  type        = string
+  description = "Protocol to use to connect with the target. Default: HTTP"
+  default     = "HTTP"
+}
+
+variable "code_deploy_load_balancer_target_groups_health_check_timeout" {
+  type        = number
+  description = "Amount of time, in seconds, during which no response means a failed health check. Default: 10"
+  default     = 10
+}
+
+variable "code_deploy_load_balancer_target_groups_health_check_unhealthy_threshold" {
+  type        = number
+  description = "Number of consecutive health check failures required before considering the target unhealthy. Default: 3"
+  default     = 3
+}
+
+variable "code_deploy_load_balancer_target_groups_port" {
+  description = "Port on which the blue and green targets receive traffic."
+  type        = number
+}
+
+variable "code_deploy_load_balancer_target_groups_vpc_id" {
+  description = "The VPC id."
+  type        = string
+}
+
+variable "deployment_controller_type" {
+  type        = string
+  description = "Type of deployment controller. Valid values: CODE_DEPLOY, ECS, EXTERNAL. Default: ECS"
+  default     = "ECS"
+}
+
+variable "deployment_maximum_percent" {
+  type        = number
+  description = "Upper limit (as a percentage of the service's desiredCount) of the number of running tasks that can be running in a service during a deployment. Default: 200"
+  default     = 200
+}
+
+variable "deployment_minimum_healthy_percent" {
+  type        = number
+  description = "Lower limit (as a percentage of the service's desiredCount) of the number of running tasks that must remain running and healthy in a service during a deployment. Default: 100"
+  default     = 100
+}
+
+variable "desired_count" {
+  type        = number
+  description = "Number of instances of the task definition to place and keep running. Default: 1"
+  default     = 1
+}
+
+variable "ecs_cluster_arn" {
+  type        = string
+  description = "ARN of an ECS cluster"
+}
+
+variable "health_check_grace_period_seconds" {
+  type        = number
+  description = "Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647."
+}
+
+variable "launch_type" {
+  type        = string
+  description = "Use FARGATE or EC2. Default: FARGATE"
+  default     = "FARGATE"
+}
+
+variable "load_balancer_container_name" {
+  type        = string
+  description = "Name of the container to associate with the load balancer (as it appears in a container definition)."
+}
+
+variable "load_balancer_container_port" {
+  type        = number
+  description = "Port on the container to associate with the load balancer."
+}
+
+variable "load_balancer_target_group_arn" {
+  type        = string
+  description = "ARN of the Load Balancer target group to associate with the service."
 }
 
 variable "name" {
-  description = "The service name."
   type        = string
+  description = "Name of the service"
 }
 
-variable "ecs_cluster" {
-  description = "ECS cluster object for this task."
-  type = object({
-    arn  = string
-    name = string
-  })
-}
-
-variable "container_port" {
-  description = "port used by conteiner service instantiated"
-  type        = number
-}
-
-variable "container_definitions" {
-  description = "Container definitions provided as valid JSON document. Default uses golang:alpine running a simple hello world."
-  type        = string
-}
-
-variable "tasks_desired_count" {
-  description = "The number of instances of a task definition."
-  default     = 1
-  type        = number
-}
-
-#### VPC
-
-variable "networking" {
-  description = "network configuration for the service"
-  type = object({
-    vpc_id           = string
-    subnet_ids       = set(string)
-    assign_public_ip = bool
-  })
-}
-
-### CLOUDWATCH
-
-variable "cloudwatch" {
-  description = "cloudwatch configuration block"
-  type = object({
-    prefix_name       = string
-    retention_in_days = number
-  })
-
-  default = {
-    prefix_name       = "/ecs/fargate"
-    retention_in_days = 7
-  }
-}
-
-### IAM
-
-variable "ecr_repo_arns" {
-  description = "The ARNs of the ECR repos"
-  type        = set(string)
-  default     = []
-}
-
-variable "ecs_instance_role" {
-  description = "The name of the ECS instance role."
-  default     = ""
-  type        = string
-}
-
-### FARGATE
-
-variable "ecs_use_fargate" {
-  description = "Whether to use Fargate for the task definition."
-  default     = false
+variable "network_assign_public_ip" {
   type        = bool
+  description = "Assign a public IP address to the ENI (Fargate launch type only). Valid values are true or false. Default false."
+  default     = false
 }
 
-variable "fargate_options" {
-  description = "Fargate options for ECS fargate task"
-  type = object({
-    platform_version = string
-    task_cpu         = number
-    task_memory      = number
-  })
-
-  default = {
-    platform_version = "1.4.0"
-    task_cpu         = 256
-    task_memory      = 512
-  }
-}
-
-### DEPLOYMENT
-
-variable "tasks_minimum_healthy_percent" {
-  description = "Lower limit on the number of running tasks."
-  default     = 100
-  type        = number
-}
-
-variable "tasks_maximum_percent" {
-  description = "Upper limit on the number of running tasks."
-  default     = 200
-  type        = number
-}
-
-
-### LOAD BALANCER
-
-variable "load_balancer" {
-  description = "load balancer information"
-
-
-
-  type = object({
-    alb_arn                 = string
-    container_name          = string
-    alb_security_group_id   = string
-    production_listener_arn = string
-    production_listener_rules = map(object({
-      priority   = number
-      actions    = set(any)
-      conditions = set(any)
-    }))
-    testing_listener = object({
-      port            = number
-      protocol        = string
-      certificate_arn = string
-      ssl_policy      = string
-    })
-    health_check_grace_period_seconds = number
-    target_group_additional_options   = map(any)
-    health_check = object({
-      healthy_threshold   = number
-      interval            = number
-      matcher             = string
-      path                = string
-      protocol            = string
-      timeout             = number
-      unhealthy_threshold = number
-    })
-  })
-
-  default = {
-    alb_arn = null
-    # name of the conteiner reference to join in load_balancer definition in service configuration
-    container_name = null
-    # security group id of the load balancer
-    alb_security_group_id = null
-    # Grace period within which failed health checks will be ignored at container start. Only applies to services with an attached loadbalancer.
-    health_check_grace_period_seconds = null
-    # listener from production listener
-    production_listener_arn = null
-    # listener rules for production listener
-    production_listener_rules = {
-      "main" : {
-        # priority of the rule
-        priority = 10
-        # actions of listener rule https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener_rule#action-blocks
-        actions = []
-        # conditions of listener rule https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener_rule#condition-blocks
-        conditions = []
-      }
-    }
-    # additional config from load balancer, this is a map for any configuration from terraform resource (see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group#argument-reference)
-    target_group_additional_options = {}
-    # testing listener (deployment pass deploy)
-    testing_listener = {
-      # port used for testing listener
-      port = -1
-      # protocol used for testing listener
-      protocol = "HTTP"
-      # certificate ARN of the loadbalancer for testing listener
-      certificate_arn = null
-      # ssl policy for TLS in listener test
-      ssl_policy = null
-    }
-    # health check configuration to enable inner all target groups (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group#health_check)
-    health_check = {
-      # healthy_threshold - (Optional) Number of consecutive health checks successes required before considering an unhealthy target healthy. Defaults to 3.
-      healthy_threshold = 3
-      # interval - (Optional) Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds. For lambda target groups, it needs to be greater as the timeout of the underlying lambda. Default 30 seconds.
-      interval = 30
-      # matcher (May be required) Response codes to use when checking for a healthy responses from a target. You can specify multiple values (for example, "200,202" for HTTP(s) or "0,12" for GRPC) or a range of values (for example, "200-299" or "0-99"). Required for HTTP/HTTPS/GRPC ALB. Only applies to Application Load Balancers (i.e., HTTP/HTTPS/GRPC) not Network Load Balancers (i.e., TCP).
-      matcher = "200-299"
-      # path - (May be required) Destination for the health check request. Required for HTTP/HTTPS ALB and HTTP NLB. Only applies to HTTP/HTTPS.
-      path = "/"
-      # protocol - (Optional) Protocol to use to connect with the target. Defaults to HTTP. Not applicable when target_type is lambda.
-      protocol = "HTTP"
-      # timeout - (Optional) Amount of time, in seconds, during which no response means a failed health check. For Application Load Balancers, the range is 2 to 120 seconds, and the default is 5 seconds for the instance target type and 30 seconds for the lambda target type. For Network Load Balancers, you cannot set a custom value, and the default is 10 seconds for TCP and HTTPS health checks and 6 seconds for HTTP health checks.
-      timeout = 10
-      # unhealthy_threshold - (Optional) Number of consecutive health check failures required before considering the target unhealthy. For Network Load Balancers, this value must be the same as the healthy_threshold. Defaults to 3.
-      unhealthy_threshold = 3
-    }
-  }
-}
-
-variable "additional_security_group_ids" {
-  description = "In addition to the security group created for the service, a list of security groups the ECS service should also be added to."
-  default     = []
+variable "network_subnets" {
   type        = set(string)
+  description = "Subnets associated with the task or service."
 }
 
-####
-# KMS configuration
-####
-variable "kms_key_id" {
-  description = "KMS customer managed key (CMK) ARN for encrypting application logs."
+variable "network_vpc_id" {
   type        = string
-  default     = ""
+  description = "The VPC id."
 }
 
-variable "deployment" {
-  description = "Deployment configuration, deployment resources will be created if deployment_controller is CODE_DEPLOY"
-  type = object({
-    description                      = string
-    deployment_controller            = string
-    deployment_config_name           = string
-    auto_rollback_enabled            = bool
-    auto_rollback_events             = set(string)
-    action_on_timeout                = string
-    wait_time_in_minutes             = number
-    termination_wait_time_in_minutes = number
-  })
-
-  default = {
-    # enabled - description for codedeploy policies/roles
-    description = "deployer"
-    # deployment controller type of the service options (ECS | CODE_DEPLOY | EXTERNAL)
-    deployment_controller = "ECS"
-    # deployment config name for rolling deploy rules (https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations.html)
-    deployment_config_name = null
-    # rollback will be triggered on error without interaction?  (true/false)
-    auto_rollback_enabled = true
-    # events will trigger rollback in case of error
-    auto_rollback_events = ["DEPLOYMENT_FAILURE"]
-    # action to perform on timeout
-    action_on_timeout = "STOP_DEPLOYMENT"
-    # wait time in minutes in verification window
-    wait_time_in_minutes = 20
-    # wait time in minutes in wait termination window
-    termination_wait_time_in_minutes = 20
-  }
+variable "platform_version" {
+  type        = string
+  description = "Platform version on which to run your service. Only applicable for launch_type set to FARGATE. Default: 1.4.0"
+  default     = "1.4.0"
 }
 
-variable "service_registries" {
-  description = "List of service registry objects as per <https://www.terraform.io/docs/providers/aws/r/ecs_service.html#service_registries-1>. List can only have a single object until <https://github.com/terraform-providers/terraform-provider-aws/issues/9573> is resolved."
-  type = set(object({
-    registry_arn   = string
-    container_name = string
-    container_port = number
-    port           = number
-  }))
-  default = []
-}
-
-
-variable "ssm_parameter_arns" {
-  description = "set of ssm parameters arn to enable access to job"
+variable "source_security_group_ids" {
   type        = set(string)
-  default     = []
+  description = "Security group id to allow access from"
 }
 
-#### TAGS
+variable "task_definition_container_definitions" {
+  type        = string
+  description = "A list of valid container definitions provided as a single valid JSON document."
+}
 
-variable "tags" {
-  description = "tags for resources"
-  type        = map(string)
-  default = {
-    module = "terraform-ecs-application"
-  }
+variable "task_definition_cpu" {
+  type        = number
+  description = "Number of cpu units used by the task. If the launch_type is FARGATE this field is required."
+}
+
+variable "task_definition_memory" {
+  type        = number
+  description = "Amount (in MiB) of memory used by the task. If the launch_type is FARGATE this field is required."
 }

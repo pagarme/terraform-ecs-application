@@ -1,35 +1,35 @@
-data "aws_iam_policy_document" "ecs_assume_role_policy" {
+resource "aws_iam_role" "codedeploy" {
+  name               = local.iam_role_name
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+  path               = "/"
+
+  tags = {
+    "Name" = local.iam_role_name
+  }
+}
+
+data "aws_iam_policy_document" "assume_role_policy" {
   statement {
     actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
+      identifiers = ["codedeploy.amazonaws.com"]
     }
   }
 }
 
-# ECS AWS CodeDeploy IAM Role
-#
-# https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/codedeploy_IAM_role.html
+resource "aws_iam_policy" "codedeploy" {
+  name        = local.iam_role_name
+  policy      = data.aws_iam_policy_document.codedeploy.json
+  path        = "/"
 
-# https://www.terraform.io/docs/providers/aws/r/iam_role.html
-resource "aws_iam_role" "codedeploy" {
-  for_each = local.deployment_configuration
-
-  name               = "${local.iam_name}-${each.key}"
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-  path               = "/"
-  description        = each.value.description
-  tags = merge(
-    {
-      "Name" = "${local.iam_name}-${each.key}"
-    },
-    var.tags,
-  )
+  tags = {
+    "Name" = local.iam_role_name
+  }
 }
 
-data "aws_iam_policy_document" "policy_deployer" {
+data "aws_iam_policy_document" "codedeploy" {
   # If the tasks in your Amazon ECS service using the blue/green deployment type require the use of
   # the task execution role or a task role override, then you must add the iam:PassRole permission
   # for each task execution role or task role override to the AWS CodeDeploy IAM role as an inline policy.
@@ -111,39 +111,7 @@ data "aws_iam_policy_document" "policy_deployer" {
   }
 }
 
-# https://www.terraform.io/docs/providers/aws/r/iam_policy.html
-resource "aws_iam_policy" "codedeploy" {
-  for_each = local.deployment_configuration
-
-  name        = "${local.iam_name}-${each.key}"
-  policy      = data.aws_iam_policy_document.policy_deployer.json
-  path        = "/"
-  description = each.value.description
-
-  tags = merge(
-    {
-      "Name" = "${local.iam_name}-${each.key}"
-    },
-    var.tags,
-  )
-}
-
-# https://www.terraform.io/docs/providers/aws/r/iam_role_policy_attachment.html
 resource "aws_iam_role_policy_attachment" "codedeploy" {
-  for_each = local.deployment_configuration
-
-  role       = aws_iam_role.codedeploy[each.key].name
-  policy_arn = aws_iam_policy.codedeploy[each.key].arn
-}
-
-
-data "aws_iam_policy_document" "assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["codedeploy.amazonaws.com"]
-    }
-  }
+  role       = aws_iam_role.codedeploy.name
+  policy_arn = aws_iam_policy.codedeploy.arn
 }

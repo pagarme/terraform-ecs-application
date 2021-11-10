@@ -6,10 +6,7 @@ resource "aws_ecs_service" "main" {
   platform_version = var.launch_type == "FARGATE" ? var.platform_version : null
 
   # Use latest active revision
-  task_definition = "${aws_ecs_task_definition.main.family}:${max(
-    aws_ecs_task_definition.main.revision,
-    data.aws_ecs_task_definition.main.revision,
-  )}"
+  task_definition = aws_ecs_task_definition.main.arn
 
   desired_count                      = var.desired_count
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
@@ -37,26 +34,23 @@ resource "aws_ecs_service" "main" {
   }
 
   network_configuration {
-    subnets          = var.network_configuration.subnet
-    assign_public_ip = var.network_configuration.assign_public_ip
+    subnets          = var.network_subnets
+    assign_public_ip = var.network_assign_public_ip
     security_groups  = [aws_security_group.ecs_sg.id]
   }
 
   load_balancer {
-    container_name   = var.load_balancer.container_name
-    target_group_arn = var.load_balancer.target_group_arn
-    container_port   = var.load_balancer.container_port
+    container_name   = var.load_balancer_container_name
+    target_group_arn = var.load_balancer_target_group_arn
+    container_port   = var.load_balancer_container_port
   }
 
   health_check_grace_period_seconds = var.health_check_grace_period_seconds
 
-  tags = var.tags
-
   lifecycle {
-    ignore_changes = [
+    ignore_changes = var.launch_type == "FARGATE" ? [
       load_balancer,
-      platform_version,
-      task_definition # for code deploy tasks
-    ]
+      task_definition
+    ] : []
   }
 }

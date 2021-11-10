@@ -1,87 +1,47 @@
-module "cloudwatch" {
-  source = "./modules/cloudwatch"
+module "ecs_service" {
+  source = "./modules/ecs/service"
 
-  name = "${var.cloudwatch.prefix_name}/${var.name}"
-
-  kms_key_id        = var.kms_key_id == "" ? null : var.kms_key_id
-  retention_in_days = var.retention_in_days
-
-  tags = var.tags
-}
-
-module "load_balancer_listener" {
-  count = local.has_load_balancer ? 1 : 0
-  source = "./modules/load-balancer/listener"
-
-  name = local.name
-
-  container_port = var.container_port
-  load_balancer = {
-    alb_arn          = var.load_balancer.alb_arn
-    testing_listener = var.load_balancer.testing_listener
-    target_group_additional_options = var.load_balancer.target_group_additional_options
-    health_check = var.load_balancer.health_check
-  }
-  vpc_id = var.networking.vpc_id
-
-  tags = var.tags
-}
-
-module "load_balancer_listener_rule" {
-  count = local.has_load_balancer ? 1 : 0
-  source = "./modules/load-balancer/listener/rule"
-
-  listener_arn = var.load_balancer.production_listener_arn
-  listener_rules = var.load_balancer.production_listener_rules
-
-  tags = var.tags
+  deployment_controller_type            = "CODE_DEPLOY"
+  deployment_maximum_percent            = var.deployment_maximum_percent
+  deployment_minimum_healthy_percent    = var.deployment_minimum_healthy_percent
+  desired_count                         = var.desired_count
+  ecs_cluster_arn                       = var.ecs_cluster_arn
+  health_check_grace_period_seconds     = var.health_check_grace_period_seconds
+  launch_type                           = var.launch_type
+  load_balancer_container_name          = var.load_balancer_container_name
+  load_balancer_container_port          = var.load_balancer_container_port
+  load_balancer_target_group_arn        = var.load_balancer_target_group_arn
+  name                                  = var.name
+  network_assign_public_ip              = var.network_assign_public_ip
+  network_subnets                       = var.network_subnets
+  network_vpc_id                        = var.network_vpc_id
+  platform_version                      = var.platform_version
+  source_security_group_ids             = var.source_security_group_ids
+  task_definition_container_definitions = var.task_definition_container_definitions
+  task_definition_cpu                   = var.task_definition_cpu
+  task_definition_memory                = var.task_definition_memory
 }
 
 module "code_deploy" {
   source = "./modules/code-deploy"
 
-  count = var.deployment.deployment_controller == "CODE_DEPLOY" && local.has_load_balancer ? 1 : 0
-
-  name = var.name
-
-  deployment                  = var.deployment
-  ecs_cluster_name            = var.ecs_cluster.name
-  listener_test_configuration = module.load_balancer_listener.listener_test_configuration
-  production_listener_arn     = var.load_balancer.production_listener_arn
-  target_groups               = module.load_balancer_listener.target_groups
-  testing_route               = module.load_balancer_listener.testing_route
-
-  tags = var.tags
-}
-
-module "ecs_service" {
-  source = "./module/ecs/service"
-
-  name = local.name
-
-  additional_security_group_ids = var.additional_security_group_ids
-  alb_security_group_ids = local.has_load_balancer ? toset(compact([var.load_balancer.alb_security_group_id])) : []
-  container_definitions = var.container_definitions
-  container_port = var.container_port
-  deployment_controller = var.deployment.deployment_controller
-  ecr_repo_arns = var.ecr_repo_arns
-  ecs_cluster_arn = var.ecs_cluster.arn
-  ecs_instance_role = var.ecs_instance_role
-  ecs_use_fargate = var.ecs_use_fargate
-  fargate_options = var.fargate_options
-  load_balancer = {
-    alb_arn = var.load_balancer.alb_arn
-    container_name = var.load_balancer.container_name
-    target_group_additional_options = var.load_balancer.target_group_additional_options
-    health_check_grace_period_seconds = var.load_balancer.health_check_grace_period_seconds
-    health_check = var.load_balancer.health_check
-  }
-  networking = var.networking
-  service_registries = var.service_registries
-  ssm_parameter_arns = var.ssm_parameter_arns
-  tasks_desired_count = var.tasks_desired_count
-  tasks_maximum_percent = var.tasks_maximum_percent
-  tasks_minimum_healthy_percent = var.tasks_minimum_healthy_percent
-
-  tags = var.tags
+  auto_rollback_enabled                                        = var.code_deploy_auto_rollback_enabled
+  auto_rollback_events                                         = var.code_deploy_auto_rollback_events
+  deployment_config_name                                       = var.code_deploy_deployment_config_name
+  deployment_ready_option_action_on_timeout                    = var.code_deploy_deployment_ready_option_action_on_timeout
+  deployment_ready_option_wait_time_in_minutes                 = var.code_deploy_deployment_ready_option_wait_time_in_minutes
+  deployment_termination_wait_time_in_minutes                  = var.code_deploy_deployment_termination_wait_time_in_minutes
+  ecs_cluster_name                                             = var.ecs_cluster_name
+  ecs_service_name                                             = module.ecs_service.name
+  load_balancer_production_listener_arns                       = var.code_deploy_load_balancer_production_listener_arns
+  load_balancer_target_groups_health_check_healthy_threshold   = var.code_deploy_load_balancer_target_groups_health_check_healthy_threshold
+  load_balancer_target_groups_health_check_interval            = var.code_deploy_load_balancer_target_groups_health_check_interval
+  load_balancer_target_groups_health_check_matcher             = var.code_deploy_load_balancer_target_groups_health_check_matcher
+  load_balancer_target_groups_health_check_path                = var.code_deploy_load_balancer_target_groups_health_check_path
+  load_balancer_target_groups_health_check_protocol            = var.code_deploy_load_balancer_target_groups_health_check_protocol
+  load_balancer_target_groups_health_check_timeout             = var.code_deploy_load_balancer_target_groups_health_check_timeout
+  load_balancer_target_groups_health_check_unhealthy_threshold = var.code_deploy_load_balancer_target_groups_health_check_unhealthy_threshold
+  load_balancer_target_groups_port                             = var.code_deploy_load_balancer_target_groups_port
+  load_balancer_target_groups_vpc_id                           = var.code_deploy_load_balancer_target_groups_vpc_id
+  name                                                         = module.ecs_service.name
 }

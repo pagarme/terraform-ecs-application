@@ -1,33 +1,22 @@
-# Create a task definition with a golang image so the ecs service can be
-# tested. We expect deployments will manage the future container definitions.
 resource "aws_ecs_task_definition" "main" {
   family        = var.name
   network_mode  = "awsvpc"
   task_role_arn = aws_iam_role.task_role.arn
 
-  # Fargate requirements
-  requires_compatibilities = compact([var.ecs_use_fargate ? "FARGATE" : ""])
-  cpu                      = var.cpu
-  memory                   = var.memory
+  requires_compatibilities = [var.launch_type]
+  cpu                      = var.task_definition_cpu
+  memory                   = var.task_definition_memory
   execution_role_arn       = join("", aws_iam_role.task_execution_role.*.arn)
 
-  container_definitions = var.container_definitions
+  container_definitions = var.task_definition_container_definitions
 
   lifecycle {
-    ignore_changes = [
+    ignore_changes = var.launch_type == "FARGATE" ? [
       requires_compatibilities,
       cpu,
       memory,
       execution_role_arn,
       container_definitions
-    ]
+    ] : []
   }
-
-  tags = var.tags
-}
-
-# Create a data source to pull the latest active revision from
-data "aws_ecs_task_definition" "main" {
-  task_definition = aws_ecs_task_definition.main.family
-  depends_on      = [aws_ecs_task_definition.main] # ensures at least one task def exists
 }

@@ -1,19 +1,12 @@
-#
-# SG - ECS
-#
-
-resource "aws_security_group" "ecs_sg" {
-  # checkov:skip=CKV2_AWS_5:Not required
+resource "aws_security_group" "main" {
   name        = "ecs-${var.name}"
-  description = "${var.name} container security group"
-  vpc_id      = var.networking.vpc_id
-
-  tags = var.tags
+  description = "Security Group for the ECS Service ${var.name} of ${data.aws_ecs_cluster.name} cluster"
+  vpc_id      = var.network_vpc_id
 }
 
-resource "aws_security_group_rule" "app_ecs_allow_outbound" {
-  description       = "All outbound"
-  security_group_id = aws_security_group.ecs_sg.id
+resource "aws_security_group_rule" "outbound" {
+  description       = "Allow all"
+  security_group_id = aws_security_group.main.id
 
   type        = "egress"
   from_port   = 0
@@ -22,17 +15,15 @@ resource "aws_security_group_rule" "app_ecs_allow_outbound" {
   cidr_blocks = ["0.0.0.0/0"]
 }
 
-resource "aws_security_group_rule" "app_ecs_allow_conn_from_container_to_alb" {
-  # if we have an alb, then create security group rules for the container
-  # ports
+resource "aws_security_group_rule" "inbound" {
   for_each = var.source_security_group_ids
 
-  description       = "Allow container service ${var.name} connection to lb (for target groups)"
-  security_group_id = aws_security_group.ecs_sg.id
+  description       = "Allow inbound from the load balancer"
+  security_group_id = aws_security_group.main.id
 
   type                     = "ingress"
-  from_port                = var.load_balancer.container_port
-  to_port                  = var.load_balancer.container_port
+  from_port                = var.load_balancer_container_port
+  to_port                  = var.load_balancer_container_port
   protocol                 = "tcp"
   source_security_group_id = each.key
 }
