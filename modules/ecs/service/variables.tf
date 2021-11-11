@@ -29,7 +29,8 @@ variable "ecs_cluster_arn" {
 
 variable "health_check_grace_period_seconds" {
   type        = number
-  description = "Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647."
+  description = "Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647. Default: 60"
+  default = 60
 }
 
 variable "launch_type" {

@@ -1,10 +1,10 @@
 resource "aws_security_group" "main" {
-  name        = "ecs-${var.name}"
+  name        = "ecs-${data.aws_ecs_cluster.name}-service-${var.name}"
   description = "Security Group for the ECS Service ${var.name} of ${data.aws_ecs_cluster.name} cluster"
   vpc_id      = var.network_vpc_id
 }
 
-resource "aws_security_group_rule" "outbound" {
+resource "aws_security_group_rule" "egress" {
   description       = "Allow all"
   security_group_id = aws_security_group.main.id
 
@@ -15,7 +15,7 @@ resource "aws_security_group_rule" "outbound" {
   cidr_blocks = ["0.0.0.0/0"]
 }
 
-resource "aws_security_group_rule" "inbound" {
+resource "aws_security_group_rule" "ingress" {
   for_each = var.source_security_group_ids
 
   description       = "Allow inbound from the load balancer"
