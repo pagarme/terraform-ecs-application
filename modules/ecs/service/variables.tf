@@ -22,9 +22,14 @@ variable "desired_count" {
   default     = 1
 }
 
+variable "ecs_cluster_name" {
+  type        = string
+  description = "The name of the ECS cluster"
+}
+
 variable "ecs_cluster_arn" {
   type        = string
-  description = "ARN of an ECS cluster"
+  description = "The ARN of the ECS cluster"
 }
 
 variable "health_check_grace_period_seconds" {
@@ -81,8 +86,8 @@ variable "platform_version" {
   default     = "1.4.0"
 }
 
-variable "source_security_group_ids" {
-  type        = set(string)
+variable "source_security_group_id" {
+  type        = string
   description = "Security group id to allow access from"
 }
 

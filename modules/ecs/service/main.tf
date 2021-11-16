@@ -36,7 +36,7 @@ resource "aws_ecs_service" "main" {
   network_configuration {
     subnets          = var.network_subnets
     assign_public_ip = var.network_assign_public_ip
-    security_groups  = [aws_security_group.ecs_sg.id]
+    security_groups  = [aws_security_group.main.id]
   }
 
   load_balancer {
@@ -46,11 +46,4 @@ resource "aws_ecs_service" "main" {
   }
 
   health_check_grace_period_seconds = var.health_check_grace_period_seconds
-
-  lifecycle {
-    ignore_changes = var.launch_type == "FARGATE" ? [
-      load_balancer,
-      task_definition
-    ] : []
-  }
 }
