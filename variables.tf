@@ -32,72 +32,14 @@ variable "code_deploy_deployment_termination_wait_time_in_minutes" {
   default     = 20
 }
 
-variable "code_deploy_ecs_cluster_name" {
-  type        = string
-  description = "The name of the ECS cluster."
-}
-
 variable "code_deploy_load_balancer_production_listener_arns" {
   type        = set(string)
   description = "List of Amazon Resource Names (ARNs) of the load balancer listeners."
 }
 
-variable "code_deploy_load_balancer_target_groups_health_check_healthy_threshold" {
-  type        = number
-  description = "Number of consecutive health checks successes required before considering an unhealthy target healthy. Defaults to 3."
-  default     = 3
-}
-
-variable "code_deploy_load_balancer_target_groups_health_check_interval" {
-  type        = number
-  description = "Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds. Default: 30"
-  default     = 30
-}
-
-variable "code_deploy_load_balancer_target_groups_health_check_matcher" {
-  type        = string
-  description = "Response codes to use when checking for a healthy responses from a target. Default: 200-299"
-  default     = "200-299"
-}
-
-variable "code_deploy_load_balancer_target_groups_health_check_path" {
-  type        = string
-  description = "Destination for the health check request."
-  default     = "/"
-}
-
-variable "code_deploy_load_balancer_target_groups_health_check_protocol" {
-  type        = string
-  description = "Protocol to use to connect with the target. Default: HTTP"
-  default     = "HTTP"
-}
-
-variable "code_deploy_load_balancer_target_groups_health_check_timeout" {
-  type        = number
-  description = "Amount of time, in seconds, during which no response means a failed health check. Default: 10"
-  default     = 10
-}
-
-variable "code_deploy_load_balancer_target_groups_health_check_unhealthy_threshold" {
-  type        = number
-  description = "Number of consecutive health check failures required before considering the target unhealthy. Default: 3"
-  default     = 3
-}
-
-variable "code_deploy_load_balancer_target_groups_port" {
-  description = "Port on which the blue and green targets receive traffic."
-  type        = number
-}
-
-variable "code_deploy_load_balancer_target_groups_vpc_id" {
-  description = "The VPC id."
-  type        = string
-}
-
-variable "deployment_controller_type" {
-  type        = string
-  description = "Type of deployment controller. Valid values: CODE_DEPLOY, ECS, EXTERNAL. Default: ECS"
-  default     = "ECS"
+variable "code_deploy_load_balancer_target_group_names" {
+  type        = set(string)
+  description = "Names of the blue and green target groups."
 }
 
 variable "deployment_maximum_percent" {
@@ -123,9 +65,15 @@ variable "ecs_cluster_arn" {
   description = "ARN of an ECS cluster"
 }
 
+variable "ecs_cluster_name" {
+  type        = string
+  description = "The name of the ECS cluster"
+}
+
 variable "health_check_grace_period_seconds" {
   type        = number
-  description = "Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647."
+  description = "Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647. Default: 60"
+  default     = 60
 }
 
 variable "launch_type" {
@@ -137,11 +85,6 @@ variable "launch_type" {
 variable "load_balancer_container_name" {
   type        = string
   description = "Name of the container to associate with the load balancer (as it appears in a container definition)."
-}
-
-variable "load_balancer_container_port" {
-  type        = number
-  description = "Port on the container to associate with the load balancer."
 }
 
 variable "load_balancer_target_group_arn" {
@@ -176,8 +119,8 @@ variable "platform_version" {
   default     = "1.4.0"
 }
 
-variable "source_security_group_ids" {
-  type        = set(string)
+variable "source_security_group_id" {
+  type        = string
   description = "Security group id to allow access from"
 }
 

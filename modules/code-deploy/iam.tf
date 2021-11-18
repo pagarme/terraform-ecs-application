@@ -20,9 +20,9 @@ data "aws_iam_policy_document" "assume_role_policy" {
 }
 
 resource "aws_iam_policy" "codedeploy" {
-  name        = local.iam_role_name
-  policy      = data.aws_iam_policy_document.codedeploy.json
-  path        = "/"
+  name   = local.iam_role_name
+  policy = data.aws_iam_policy_document.codedeploy.json
+  path   = "/"
 
   tags = {
     "Name" = local.iam_role_name

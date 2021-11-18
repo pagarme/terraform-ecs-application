@@ -1,5 +1,7 @@
 locals {
 
+  container_port = [for d in jsondecode(var.task_definition_container_definitions) : d if d.name == var.name][0].portMappings[0].containerPort
+
   ordered_placement_strategy = {
     EC2 = [
       {

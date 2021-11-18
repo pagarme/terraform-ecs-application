@@ -5,7 +5,6 @@ resource "aws_ecs_service" "main" {
   launch_type      = var.launch_type
   platform_version = var.launch_type == "FARGATE" ? var.platform_version : null
 
-  # Use latest active revision
   task_definition = aws_ecs_task_definition.main.arn
 
   desired_count                      = var.desired_count
@@ -42,7 +41,7 @@ resource "aws_ecs_service" "main" {
   load_balancer {
     container_name   = var.load_balancer_container_name
     target_group_arn = var.load_balancer_target_group_arn
-    container_port   = var.load_balancer_container_port
+    container_port   = local.container_port
   }
 
   health_check_grace_period_seconds = var.health_check_grace_period_seconds

@@ -35,7 +35,7 @@ variable "ecs_cluster_arn" {
 variable "health_check_grace_period_seconds" {
   type        = number
   description = "Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647. Default: 60"
-  default = 60
+  default     = 60
 }
 
 variable "launch_type" {
@@ -47,11 +47,6 @@ variable "launch_type" {
 variable "load_balancer_container_name" {
   type        = string
   description = "Name of the container to associate with the load balancer (as it appears in a container definition)."
-}
-
-variable "load_balancer_container_port" {
-  type        = number
-  description = "Port on the container to associate with the load balancer."
 }
 
 variable "load_balancer_target_group_arn" {

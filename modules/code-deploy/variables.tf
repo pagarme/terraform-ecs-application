@@ -47,56 +47,9 @@ variable "load_balancer_production_listener_arns" {
   description = "List of Amazon Resource Names (ARNs) of the load balancer listeners."
 }
 
-variable "load_balancer_target_groups_health_check_healthy_threshold" {
-  type        = number
-  description = "Number of consecutive health checks successes required before considering an unhealthy target healthy. Defaults to 3."
-  default     = 3
-}
-
-variable "load_balancer_target_groups_health_check_interval" {
-  type        = number
-  description = "Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds. Default: 30"
-  default     = 30
-}
-
-variable "load_balancer_target_groups_health_check_matcher" {
-  type        = string
-  description = "Response codes to use when checking for a healthy responses from a target. Default: 200-299"
-  default     = "200-299"
-}
-
-variable "load_balancer_target_groups_health_check_path" {
-  type        = string
-  description = "Destination for the health check request."
-  default     = "/"
-}
-
-variable "load_balancer_target_groups_health_check_protocol" {
-  type        = string
-  description = "Protocol to use to connect with the target. Default: HTTP"
-  default     = "HTTP"
-}
-
-variable "load_balancer_target_groups_health_check_timeout" {
-  type        = number
-  description = "Amount of time, in seconds, during which no response means a failed health check. Default: 10"
-  default     = 10
-}
-
-variable "load_balancer_target_groups_health_check_unhealthy_threshold" {
-  type        = number
-  description = "Number of consecutive health check failures required before considering the target unhealthy. Default: 3"
-  default     = 3
-}
-
-variable "load_balancer_target_groups_port" {
-  description = "Port on which the blue and green targets receive traffic."
-  type        = number
-}
-
-variable "load_balancer_target_groups_vpc_id" {
-  description = "The VPC id."
-  type        = string
+variable "load_balancer_target_group_names" {
+  type        = set(string)
+  description = "Names of the blue and green target groups."
 }
 
 variable "name" {

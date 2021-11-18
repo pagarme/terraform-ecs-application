@@ -20,8 +20,8 @@ resource "aws_security_group_rule" "ingress" {
   security_group_id = aws_security_group.main.id
 
   type                     = "ingress"
-  from_port                = var.load_balancer_container_port
-  to_port                  = var.load_balancer_container_port
+  from_port                = local.container_port
+  to_port                  = local.container_port
   protocol                 = "tcp"
   source_security_group_id = var.source_security_group_id
 }

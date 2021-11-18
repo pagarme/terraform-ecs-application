@@ -19,12 +19,12 @@ resource "aws_codedeploy_deployment_group" "main" {
 
   blue_green_deployment_config {
     deployment_ready_option {
-      action_on_timeout = var.deployment_ready_option_action_on_timeout
+      action_on_timeout    = var.deployment_ready_option_action_on_timeout
       wait_time_in_minutes = var.deployment_ready_option_wait_time_in_minutes
     }
 
     terminate_blue_instances_on_deployment_success {
-      action = "TERMINATE"
+      action                           = "TERMINATE"
       termination_wait_time_in_minutes = var.deployment_termination_wait_time_in_minutes
     }
   }
@@ -49,9 +49,9 @@ resource "aws_codedeploy_deployment_group" "main" {
       # One pair of target groups. One is associated with the original task set.
       # The second target is associated with the task set that serves traffic after the deployment completes.
       dynamic "target_group" {
-        for_each = ["blue", "green"]
+        for_each = var.load_balancer_target_group_names
         content {
-          name = aws_lb_target_group.main[env].name
+          name = target_group.value
         }
       }
     }
