@@ -7,6 +7,7 @@ module "ecs_service" {
   desired_count                         = var.desired_count
   ecs_cluster_arn                       = var.ecs_cluster_arn
   ecs_cluster_name                      = var.ecs_cluster_name
+  iam_policy_statements_task_execution  = var.iam_policy_statements_task_execution
   health_check_grace_period_seconds     = var.health_check_grace_period_seconds
   launch_type                           = var.launch_type
   load_balancer_container_name          = var.load_balancer_container_name
@@ -33,7 +34,7 @@ module "code_deploy" {
   deployment_termination_wait_time_in_minutes  = var.code_deploy_deployment_termination_wait_time_in_minutes
   ecs_cluster_name                             = var.ecs_cluster_name
   ecs_service_name                             = module.ecs_service.name
-  load_balancer_production_listener_arns       = var.code_deploy_load_balancer_production_listener_arns
+  load_balancer_production_listener_arn        = var.code_deploy_load_balancer_production_listener_arn
   load_balancer_target_group_names             = var.code_deploy_load_balancer_target_group_names
   name                                         = module.ecs_service.name
 }

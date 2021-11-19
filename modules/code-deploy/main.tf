@@ -20,7 +20,7 @@ resource "aws_codedeploy_deployment_group" "main" {
   blue_green_deployment_config {
     deployment_ready_option {
       action_on_timeout    = var.deployment_ready_option_action_on_timeout
-      wait_time_in_minutes = var.deployment_ready_option_wait_time_in_minutes
+      wait_time_in_minutes = var.deployment_ready_option_action_on_timeout == "STOP_DEPLOYMENT" ? var.deployment_ready_option_wait_time_in_minutes : 0
     }
 
     terminate_blue_instances_on_deployment_success {
@@ -43,7 +43,7 @@ resource "aws_codedeploy_deployment_group" "main" {
   load_balancer_info {
     target_group_pair_info {
       prod_traffic_route {
-        listener_arns = var.load_balancer_production_listener_arns
+        listener_arns = [var.load_balancer_production_listener_arn]
       }
 
       # One pair of target groups. One is associated with the original task set.

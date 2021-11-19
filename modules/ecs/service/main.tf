@@ -45,4 +45,8 @@ resource "aws_ecs_service" "main" {
   }
 
   health_check_grace_period_seconds = var.health_check_grace_period_seconds
+
+  lifecycle {
+    ignore_changes = [task_definition, load_balancer]
+  }
 }

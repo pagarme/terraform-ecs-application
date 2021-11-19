@@ -32,9 +32,9 @@ variable "code_deploy_deployment_termination_wait_time_in_minutes" {
   default     = 20
 }
 
-variable "code_deploy_load_balancer_production_listener_arns" {
-  type        = set(string)
-  description = "List of Amazon Resource Names (ARNs) of the load balancer listeners."
+variable "code_deploy_load_balancer_production_listener_arn" {
+  type        = string
+  description = "ARN of the load balancer production listener."
 }
 
 variable "code_deploy_load_balancer_target_group_names" {
@@ -74,6 +74,15 @@ variable "health_check_grace_period_seconds" {
   type        = number
   description = "Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647. Default: 60"
   default     = 60
+}
+
+variable "iam_policy_statements_task_execution" {
+  type = list(object({
+    actions = list(string)
+    resources = list(string)
+  }))
+  description = "Additional policy statements for the task execution role policy."
+  default = []
 }
 
 variable "launch_type" {

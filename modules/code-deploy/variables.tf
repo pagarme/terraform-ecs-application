@@ -42,9 +42,9 @@ variable "ecs_service_name" {
   description = "The name of the ECS service."
 }
 
-variable "load_balancer_production_listener_arns" {
-  type        = set(string)
-  description = "List of Amazon Resource Names (ARNs) of the load balancer listeners."
+variable "load_balancer_production_listener_arn" {
+  type        = string
+  description = "ARN of the load balancer production listener."
 }
 
 variable "load_balancer_target_group_names" {

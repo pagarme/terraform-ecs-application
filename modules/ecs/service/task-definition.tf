@@ -9,4 +9,8 @@ resource "aws_ecs_task_definition" "main" {
   execution_role_arn       = join("", aws_iam_role.task_execution_role.*.arn)
 
   container_definitions = var.task_definition_container_definitions
+
+  lifecycle {
+    ignore_changes = [container_definitions]
+  }
 }

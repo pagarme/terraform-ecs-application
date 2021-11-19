@@ -38,6 +38,15 @@ variable "health_check_grace_period_seconds" {
   default     = 60
 }
 
+variable "iam_policy_statements_task_execution" {
+  type = list(object({
+    actions = list(string)
+    resources = list(string)
+  }))
+  description = "Additional policy statements for the task execution role policy."
+  default = []
+}
+
 variable "launch_type" {
   type        = string
   description = "Use FARGATE or EC2. Default: FARGATE"
