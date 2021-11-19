@@ -77,12 +77,12 @@ variable "health_check_grace_period_seconds" {
 }
 
 variable "iam_policy_statements_task_execution" {
-  type = list(object({
-    actions = list(string)
-    resources = list(string)
+  type = set(object({
+    actions   = set(string)
+    resources = set(string)
   }))
   description = "Additional policy statements for the task execution role policy."
-  default = []
+  default     = []
 }
 
 variable "launch_type" {
