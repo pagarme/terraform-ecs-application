@@ -33,7 +33,77 @@ Terraform 1.0. Submit pull-requests to master branch.
 
 ## Usage
 
-TBD.
+Snippet example of using this code.
+
+```terraform
+module "ecs_service" {
+  source = "git@github.com:pagarme/terraform-ecs-application.git"
+
+  code_deploy_deployment_config_name                    = "CodeDeployDefault.ECSLinear10PercentEvery3Minutes"
+  code_deploy_deployment_ready_option_action_on_timeout = "CONTINUE_DEPLOYMENT"
+
+  code_deploy_load_balancer_production_listener_arn = var.lb_listener_arn
+  code_deploy_load_balancer_target_group_names      = [module.target_groups.target_group_blue.name, module.target_groups.target_group_green.name]
+
+  desired_count = var.ecs_service_desired_count
+
+  ecs_cluster_arn  = var.ecs_cluster_arn
+  ecs_cluster_name = var.ecs_cluster_name
+
+  # In this example, additional permissions are given for CloudWatch Log Group, ECR (so Fargate can pull images) and Parameter Store. Feel free to remove or add other permissions according to your case.
+  iam_policy_statements_task_execution = [{
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+    resources = ["${var.cloudwatch_log_group_arn}:*"]
+    }, {
+    actions = [
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:DescribeRepositories",
+      "ecr:BatchGetImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:PutImage",
+      "ecr:ListImages",
+    ]
+    resources = var.ecr_arns
+    }, {
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+    ]
+    resources = var.ssm_parameter_arns
+  }]
+
+  load_balancer_container_name   = var.ecs_cluster_name
+  load_balancer_target_group_arn = module.target_groups.target_group_blue.arn
+
+  name = local.ecs_service_name
+
+  network_assign_public_ip = true
+  network_subnets          = var.subnet_ids
+  network_vpc_id           = var.vpc_id
+
+  # Here, you probably want to use the Load Balancer Security Group
+  source_security_group_id = var.security_group_id
+
+  task_definition_container_definitions = var.task_definition_container_definitions # JSON encoded string
+  task_definition_cpu                   = 2048
+  task_definition_memory                = 4096
+}
+
+module "target_groups" {
+  source = "git@github.com:pagarme/terraform-ecs-application.git//modules/load-balancer/target-groups"
+
+  health_check_path = "/_health_check"
+  name              = var.target_groups_name_prefix
+  port              = 80
+  vpc_id            = var.vpc_id
+}
+```
 
 ## Limitations (Some limitations we be solved later)
 
