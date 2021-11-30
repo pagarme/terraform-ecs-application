@@ -1,148 +1,40 @@
-#                            ▄▄▄▄▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▄▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                           ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                               ▀▀▀▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                                      ▀▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                                          ▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄
-#                                             ▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                                               ▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-#                                                 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-#                      ▄▄▓▓▓▓▓▓▓▄▄                 ▀▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                  ▄▄▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄               ▀▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌              ▓▓▓▓▓▓▓▓▓▓▓▓▓
-#               ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓             ▐▓▓▓▓▓▓▓▓▓▓▓▓▌
-#               ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓             ▓▓▓▓▓▓▓▓▓▓▓▓▌
-#              ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌            ▓▓▓▓▓▓▓▓▓▓▓▓▓
-#              ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-#               ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-#               ▐▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-#                 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-#                   ▀▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▀
-#                      ▀▀▀▓▓▓▓▓▀▀▀
-# Pagar.me pagamentos, uma empresa do grupo Stone.
+module "ecs_service" {
+  source = "./modules/ecs/service"
 
-
-
-#
-# ECS Resource configuration
-#
-
-# Create a task definition with a golang image so the ecs service can be
-# tested. We expect deployments will manage the future container definitions.
-resource "aws_ecs_task_definition" "main" {
-  family        = local.name
-  network_mode  = "awsvpc"
-  task_role_arn = aws_iam_role.task_role.arn
-
-  # Fargate requirements
-  requires_compatibilities = compact([var.ecs_use_fargate ? "FARGATE" : ""])
-  cpu                      = var.ecs_use_fargate ? var.fargate_options.task_cpu : ""
-  memory                   = var.ecs_use_fargate ? var.fargate_options.task_memory : ""
-  execution_role_arn       = join("", aws_iam_role.task_execution_role.*.arn)
-
-  container_definitions = var.container_definitions
-
-  lifecycle {
-    ignore_changes = [
-      requires_compatibilities,
-      cpu,
-      memory,
-      execution_role_arn,
-      container_definitions
-    ]
-  }
-
-  tags = var.tags
+  deployment_controller_type            = "CODE_DEPLOY"
+  deployment_maximum_percent            = var.deployment_maximum_percent
+  deployment_minimum_healthy_percent    = var.deployment_minimum_healthy_percent
+  desired_count                         = var.desired_count
+  ecs_cluster_arn                       = var.ecs_cluster_arn
+  ecs_cluster_name                      = var.ecs_cluster_name
+  iam_policy_statements_task_execution  = var.iam_policy_statements_task_execution
+  health_check_grace_period_seconds     = var.health_check_grace_period_seconds
+  launch_type                           = var.launch_type
+  load_balancer_container_name          = var.load_balancer_container_name
+  load_balancer_target_group_arn        = var.load_balancer_target_group_arn
+  name                                  = var.name
+  network_assign_public_ip              = var.network_assign_public_ip
+  network_subnets                       = var.network_subnets
+  network_vpc_id                        = var.network_vpc_id
+  platform_version                      = var.platform_version
+  source_security_group_id              = var.source_security_group_id
+  task_definition_container_definitions = var.task_definition_container_definitions
+  task_definition_cpu                   = var.task_definition_cpu
+  task_definition_memory                = var.task_definition_memory
 }
 
-# Create a data source to pull the latest active revision from
-data "aws_ecs_task_definition" "main" {
-  task_definition = aws_ecs_task_definition.main.family
-  depends_on      = [aws_ecs_task_definition.main] # ensures at least one task def exists
-}
+module "code_deploy" {
+  source = "./modules/code-deploy"
 
-
-resource "aws_ecs_service" "main" {
-  name    = var.name
-  cluster = var.ecs_cluster.arn
-
-  launch_type      = local.ecs_service_launch_type
-  platform_version = local.fargate_platform_version
-
-  # Use latest active revision
-  task_definition = "${aws_ecs_task_definition.main.family}:${max(
-    aws_ecs_task_definition.main.revision,
-    data.aws_ecs_task_definition.main.revision,
-  )}"
-
-  desired_count                      = var.tasks_desired_count
-  deployment_minimum_healthy_percent = var.tasks_minimum_healthy_percent
-  deployment_maximum_percent         = var.tasks_maximum_percent
-
-  deployment_controller {
-    type = var.deployment.deployment_controller
-  }
-
-  dynamic "ordered_placement_strategy" {
-    for_each = local.ecs_service_ordered_placement_strategy[local.ecs_service_launch_type]
-
-    content {
-      type  = ordered_placement_strategy.value.type
-      field = ordered_placement_strategy.value.field
-    }
-  }
-
-  dynamic "placement_constraints" {
-    for_each = local.ecs_service_placement_constraints[local.ecs_service_launch_type]
-
-    content {
-      type = placement_constraints.value.type
-    }
-  }
-
-  network_configuration {
-    subnets          = var.networking.subnet_ids
-    assign_public_ip = var.networking.assign_public_ip
-    security_groups  = local.ecs_service_security_groups
-  }
-
-  dynamic "load_balancer" {
-    for_each = local.production_target_groups
-    content {
-      container_name   = var.load_balancer.container_name != null ? var.load_balancer.container_name : aws_lb_target_group.this[load_balancer.key].name
-      target_group_arn = aws_lb_target_group.this[load_balancer.key].arn
-      container_port   = load_balancer.value.backend_port
-    }
-  }
-
-
-  health_check_grace_period_seconds = var.load_balancer.alb_arn != null ? var.load_balancer.health_check_grace_period_seconds : null
-
-  dynamic "service_registries" {
-    for_each = var.service_registries
-    content {
-      registry_arn   = service_registries.value.registry_arn
-      container_name = service_registries.value.container_name
-      container_port = service_registries.value.container_port
-      port           = service_registries.value.port
-    }
-  }
-
-  tags = var.tags
-
-  depends_on = [
-    aws_lb_target_group.this,
-    aws_lb_listener_rule.this
-  ]
-
-  lifecycle {
-    ignore_changes = [
-      load_balancer,
-      platform_version,
-      task_definition # for code deploy tasks
-    ]
-  }
+  auto_rollback_enabled                        = var.code_deploy_auto_rollback_enabled
+  auto_rollback_events                         = var.code_deploy_auto_rollback_events
+  deployment_config_name                       = var.code_deploy_deployment_config_name
+  deployment_ready_option_action_on_timeout    = var.code_deploy_deployment_ready_option_action_on_timeout
+  deployment_ready_option_wait_time_in_minutes = var.code_deploy_deployment_ready_option_wait_time_in_minutes
+  deployment_termination_wait_time_in_minutes  = var.code_deploy_deployment_termination_wait_time_in_minutes
+  ecs_cluster_name                             = var.ecs_cluster_name
+  ecs_service_name                             = module.ecs_service.name
+  load_balancer_production_listener_arn        = var.code_deploy_load_balancer_production_listener_arn
+  load_balancer_target_group_names             = var.code_deploy_load_balancer_target_group_names
+  name                                         = module.ecs_service.name
 }
